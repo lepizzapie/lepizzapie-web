@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Calendar, Clock, Users, MapPin, Phone, Mail, CheckCircle } from 'lucide-react';
+import { Calendar, MapPin, Phone, Mail, CheckCircle } from 'lucide-react';
 
 interface BookingForm {
   eventDate: string;
@@ -18,13 +18,11 @@ interface BookingForm {
 
 const BookEvent: React.FC = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<string>('');
   
   const {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
     reset
   } = useForm<BookingForm>();
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pizza, Users, MapPin, Clock, Star } from 'lucide-react';
+import { Pizza, Users, MapPin, Star } from 'lucide-react';
 
 const About: React.FC = () => {
   return (
@@ -8,7 +8,7 @@ const About: React.FC = () => {
         <div className="text-center mb-16">
           <h1 className="section-title">About Le Pizza Pie</h1>
           <p className="section-subtitle">
-            Bringing authentic Italian pizza to your special events since 2018
+            Bringing authentic Italian pizza to your special events since 2022
           </p>
         </div>
 

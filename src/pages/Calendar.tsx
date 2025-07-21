@@ -78,8 +78,6 @@ const Calendar: React.FC = () => {
     return availableDates;
   };
 
-  const availableDates = generateAvailableDates();
-
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });

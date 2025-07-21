@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Mobile Pizza Catering Website",
   "private": true,
+  "proxy": "http://localhost:5001",
   "dependencies": {
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",

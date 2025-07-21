@@ -29,30 +29,6 @@ const Social: React.FC = () => {
     }
   ];
 
-  const socialLinks = [
-    {
-      name: 'Instagram',
-      icon: Instagram,
-      url: 'https://instagram.com/lepizzapie',
-      followers: '2.5K',
-      color: 'text-pink-600'
-    },
-    {
-      name: 'Facebook',
-      icon: Facebook,
-      url: 'https://facebook.com/lepizzapie',
-      followers: '1.8K',
-      color: 'text-blue-600'
-    },
-    {
-      name: 'Twitter',
-      icon: Twitter,
-      url: 'https://twitter.com/lepizzapie',
-      followers: '950',
-      color: 'text-blue-400'
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

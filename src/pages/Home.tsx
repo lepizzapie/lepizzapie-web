@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Pizza, Calendar, Users, Star } from 'lucide-react';
+import { Calendar, Users } from 'lucide-react';
 
 const Home: React.FC = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-pizza-red via-pizza-orange to-pizza-yellow min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative bg-pizza-yellow min-h-[60vh] flex items-center justify-center overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-32 h-32 bg-white rounded-full"></div>
@@ -15,22 +15,19 @@ const Home: React.FC = () => {
           <div className="absolute bottom-20 right-20 w-20 h-20 bg-white rounded-full"></div>
         </div>
 
-        <div className="relative z-10 text-center text-white px-4 sm:px-6 lg:px-8">
-          {/* Main Pizza Icon */}
-          <div className="mb-8">
-            <div className="w-32 h-32 mx-auto bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Pizza className="w-20 h-20 text-white" />
-            </div>
+        <div className="relative z-10 flex flex-col text-center text-white h-full w-full justify-start items-center p-0 m-0">
+          {/* Main Pizza Icon at the very top */}
+          <div className="flex-none flex items-start justify-center p-0 m-0 max-w-2xl w-full pt-0 mt-0">
+            <img 
+              src="/lepizzapielogomouthopensolo.svg" 
+              alt="Le Pizza Pie Logo" 
+              className="w-full object-contain p-0 m-0" 
+            />
           </div>
-
-          <h1 className="font-display text-5xl md:text-7xl font-bold mb-6">
-            Le Pizza Pie
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl mb-2 max-w-2xl mx-auto mt-6">
             Bringing authentic pizza magic to your events, parties, and celebrations
           </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-6 mb-4">
             <Link
               to="/book-event"
               className="btn-primary text-lg px-8 py-4 bg-white text-pizza-red hover:bg-gray-100"
@@ -43,13 +40,6 @@ const Home: React.FC = () => {
             >
               View Calendar
             </Link>
-          </div>
-        </div>
-
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
           </div>
         </div>
       </section>
@@ -67,7 +57,7 @@ const Home: React.FC = () => {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="card text-center">
               <div className="w-16 h-16 bg-pizza-red rounded-full flex items-center justify-center mx-auto mb-4">
-                <Pizza className="w-8 h-8 text-white" />
+                <Calendar className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Fresh & Authentic</h3>
               <p className="text-gray-600">

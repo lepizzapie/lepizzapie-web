@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Pizza, Calendar, Users, Phone, Mail, MapPin, Edit, Trash2, CheckCircle, XCircle, LogOut, Send, RefreshCw } from 'lucide-react';
-import GoogleCalendarService from '../utils/googleCalendar';
+// REMOVE: import GoogleCalendarService from '../utils/googleCalendar';
 
 interface Event {
   id: string;
@@ -23,12 +23,11 @@ interface Event {
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
   const [emailType, setEmailType] = useState<'all' | 'confirmed' | 'pending'>('all');
-  const [googleCalendarService, setGoogleCalendarService] = useState<GoogleCalendarService | null>(null);
+  // REMOVE: const [googleCalendarService, setGoogleCalendarService] = useState<GoogleCalendarService | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string>('');
   const [showPastEvents, setShowPastEvents] = useState(false);
@@ -45,94 +44,8 @@ const AdminDashboard: React.FC = () => {
     '2026-02-20'
   ]);
 
-  // Mock events data (in real app, this would come from API)
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: '1',
-      date: '2025-02-15',
-      time: '6:00 PM',
-      title: 'Birthday Party - Sarah Johnson',
-      contactName: 'Sarah Johnson',
-      contactPhone: '(555) 123-4567',
-      contactEmail: 'sarah.johnson@email.com',
-      guestCount: 25,
-      eventLocation: '123 Main St, Anytown, CA 90210',
-      status: 'confirmed',
-      specialRequests: 'Gluten-free options needed for 3 guests',
-      pizzaPreferences: ['Margarita Pie', 'Pepperoni Pie', 'Vegetable Pie']
-    },
-    {
-      id: '2',
-      date: '2025-02-22',
-      time: '12:00 PM',
-      title: 'Corporate Event - TechCorp',
-      contactName: 'Mike Davis',
-      contactPhone: '(555) 987-6543',
-      contactEmail: 'mike.davis@techcorp.com',
-      guestCount: 50,
-      eventLocation: '456 Business Ave, Suite 100, Anytown, CA 90210',
-      status: 'confirmed',
-      specialRequests: 'Need vegetarian options for 15 people',
-      pizzaPreferences: ['Pepperoni Pie', 'Vegetable Pie', 'Sausage Pie']
-    },
-    {
-      id: '3',
-      date: '2025-02-24',
-      time: '7:00 PM',
-      title: 'Wedding Reception - Smith Family',
-      contactName: 'Jennifer Smith',
-      contactPhone: '(555) 456-7890',
-      contactEmail: 'jennifer.smith@email.com',
-      guestCount: 100,
-      eventLocation: '789 Wedding Blvd, Anytown, CA 90210',
-      status: 'pending',
-      specialRequests: 'Elegant presentation, cocktail hour service',
-      pizzaPreferences: ['Margarita Pie', 'Pepperoni Pie', 'White Pie', 'Vegetable Pie']
-    },
-    {
-      id: '4',
-      date: '2026-01-15',
-      time: '5:00 PM',
-      title: 'Corporate New Year Party - XYZ Corp',
-      contactName: 'Lisa Chen',
-      contactPhone: '(555) 777-8888',
-      contactEmail: 'lisa.chen@xyzcorp.com',
-      guestCount: 80,
-      eventLocation: 'XYZ Corp Office, 500 Corporate Dr, Anytown, CA 90210',
-      status: 'confirmed',
-      specialRequests: 'New Year themed decorations, Champagne service, Additional Pizzas',
-      pizzaPreferences: ['Pepperoni Pie', 'Vegetable Pie', 'White Pie', 'Sausage Pie']
-    },
-    {
-      id: '5',
-      date: '2026-01-30',
-      time: '6:30 PM',
-      title: 'Anniversary Celebration - Wilson Family',
-      contactName: 'David Wilson',
-      contactPhone: '(555) 999-0000',
-      contactEmail: 'david.wilson@email.com',
-      guestCount: 40,
-      eventLocation: 'Wilson Residence, 600 Celebration Ave, Anytown, CA 90210',
-      status: 'pending',
-      specialRequests: 'Romantic setup, Wine pairing suggestions, Meatballs',
-      pizzaPreferences: ['Margarita Pie', 'Pepperoni Pie', 'Vegetable Pie']
-    },
-    {
-      id: '6',
-      date: '2026-02-12',
-      time: '12:00 PM',
-      title: 'Valentine\'s Day Event - Love Corp',
-      contactName: 'Maria Rodriguez',
-      contactPhone: '(555) 111-3333',
-      contactEmail: 'maria.rodriguez@lovecorp.com',
-      guestCount: 60,
-      eventLocation: 'Love Corp Headquarters, 700 Heart St, Anytown, CA 90210',
-      status: 'confirmed',
-      specialRequests: 'Valentine\'s Day theme, Rose decorations, Chicken Wings',
-      pizzaPreferences: ['Margarita Pie', 'Pepperoni Pie', 'White Pie', 'Vegetable Pie']
-    }
-  ]);
-
+  // On mount, fetch events from backend
+  const [events, setEvents] = useState<Event[]>([]);
   // Mock past events data
   const [pastEvents, setPastEvents] = useState<Event[]>([
     {
@@ -185,6 +98,62 @@ const AdminDashboard: React.FC = () => {
     }
   ]);
 
+  const [showCreateEventModal, setShowCreateEventModal] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    date: '',
+    time: '',
+    contactName: '',
+    contactPhone: '',
+    contactEmail: '',
+    guestCount: 25,
+    eventLocation: '',
+    status: 'pending',
+    specialRequests: '',
+    pizzaPreferences: [] as string[],
+  });
+
+  const handleCreateEvent = async () => {
+    try {
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newEvent),
+      });
+      if (response.ok) {
+        setShowCreateEventModal(false);
+        setNewEvent({
+          title: '', date: '', time: '', contactName: '', contactPhone: '', contactEmail: '', guestCount: 25, eventLocation: '', status: 'pending', specialRequests: '', pizzaPreferences: []
+        });
+        // Refresh events
+        const eventsRes = await fetch('/api/events');
+        const data = await eventsRes.json();
+        const mapped = data.map((event: any) => ({ ...event, id: event._id }));
+        setEvents(mapped);
+        alert('Event created successfully!');
+      } else {
+        alert('Failed to create event.');
+      }
+    } catch (error) {
+      alert('Error creating event.');
+    }
+  };
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('/api/events');
+        const data = await response.json();
+        // Map MongoDB _id to id for frontend use
+        const mapped = data.map((event: any) => ({ ...event, id: event._id }));
+        setEvents(mapped);
+      } catch (error) {
+        console.error('Failed to fetch events:', error);
+      }
+    };
+    fetchEvents();
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     navigate('/admin');
@@ -192,57 +161,34 @@ const AdminDashboard: React.FC = () => {
 
   const updateEventStatus = async (eventId: string, newStatus: 'confirmed' | 'cancelled') => {
     try {
-      console.log('updateEventStatus called with:', { eventId, newStatus });
-      console.log('Current events:', events);
-      
-      // Update the event status
+      // Update the event status locally
       const updatedEvents = events.map(event => 
         event.id === eventId ? { ...event, status: newStatus } : event
       );
-      console.log('Updated events:', updatedEvents);
       setEvents(updatedEvents);
-      
-      // If event is being confirmed, try to sync to Google Calendar
+
       if (newStatus === 'confirmed') {
-        const confirmedEvent = updatedEvents.find(event => event.id === eventId);
-        if (confirmedEvent) {
-          // Show immediate confirmation
-          alert(`Event "${confirmedEvent.title}" has been confirmed!`);
-          
-          // Try to sync to Google Calendar if available
-          if (googleCalendarService) {
-            try {
-              setSyncStatus('Syncing newly confirmed event...');
-              const result = await googleCalendarService.syncAllEvents([confirmedEvent]);
-              
-              if (result.success > 0) {
-                setSyncStatus(`Event confirmed and synced to Google Calendar!`);
-                setTimeout(() => {
-                  alert(`Event "${confirmedEvent.title}" has been synced to Google Calendar!\n\nYou can now view this event in your Google Calendar app, which will sync to your iPhone Calendar.`);
-                }, 500);
-              } else {
-                setSyncStatus('Event confirmed but sync failed');
-                console.log('Google Calendar sync failed, but event was confirmed locally');
-              }
-            } catch (error) {
-              console.error('Auto-sync failed:', error);
-              setSyncStatus('Event confirmed but sync failed');
-              console.log('Google Calendar sync failed, but event was confirmed locally');
-            }
-          } else {
-            setSyncStatus('Event confirmed - Google Calendar not available');
-            console.log('Google Calendar not available, but event was confirmed locally');
-          }
+        setSyncStatus('Syncing event to Google Calendar...');
+        // Call backend to confirm and sync event
+        const response = await fetch('/api/events/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventId }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setSyncStatus('Event confirmed and synced to Google Calendar!');
+          alert('Event confirmed and synced to Google Calendar!');
+        } else {
+          setSyncStatus('Event confirmed but sync failed');
+          alert('Event confirmed, but failed to sync to Google Calendar: ' + (data.error || 'Unknown error'));
         }
       } else if (newStatus === 'cancelled') {
-        const cancelledEvent = updatedEvents.find(event => event.id === eventId);
-        if (cancelledEvent) {
-          setSyncStatus('Event cancelled');
-          alert(`Event "${cancelledEvent.title}" has been cancelled.`);
-        }
+        setSyncStatus('Event cancelled');
+        alert('Event cancelled.');
       }
     } catch (error) {
-      console.error('Error updating event status:', error);
+      setSyncStatus('Error updating event status');
       alert('There was an error updating the event status. Please try again.');
     }
   };
@@ -312,60 +258,27 @@ const AdminDashboard: React.FC = () => {
     };
   };
 
-  // Initialize Google Calendar service
-  useEffect(() => {
-    const initGoogleCalendar = async () => {
-      try {
-        const service = new GoogleCalendarService();
-        const initialized = await service.initialize();
-        if (initialized) {
-          setGoogleCalendarService(service);
-          setSyncStatus('Google Calendar ready');
-        } else {
-          setSyncStatus('Google Calendar not configured');
-          console.log('Google Calendar not configured - events can still be confirmed locally');
-        }
-      } catch (error) {
-        console.error('Failed to initialize Google Calendar:', error);
-        setSyncStatus('Google Calendar initialization failed');
-        console.log('Google Calendar initialization failed - events can still be confirmed locally');
-      }
-    };
+  // REMOVE: useEffect for GoogleCalendarService
+  // REMOVE: all direct usage of googleCalendarService
 
-    // Initialize Google Calendar in the background
-    initGoogleCalendar();
-  }, []);
-
-  // Sync events to Google Calendar
   const syncToGoogleCalendar = async () => {
-    if (!googleCalendarService) {
-      alert('Google Calendar service not available. Please check your configuration.');
-      return;
-    }
-
     setIsSyncing(true);
-    setSyncStatus('Syncing events...');
-
+    setSyncStatus('Syncing events to Google Calendar...');
     try {
-      const confirmedEvents = events.filter(event => event.status === 'confirmed');
-      
-      if (confirmedEvents.length === 0) {
-        setSyncStatus('No confirmed events to sync');
-        setIsSyncing(false);
-        return;
-      }
-
-      const result = await googleCalendarService.syncAllEvents(confirmedEvents);
-      
-      setSyncStatus(`Synced ${result.success} events successfully${result.failed > 0 ? `, ${result.failed} failed` : ''}`);
-      
-      if (result.success > 0) {
-        alert(`Successfully synced ${result.success} events to Google Calendar!\n\nYou can now view these events in your Google Calendar app, which will sync to your iPhone Calendar.`);
+      const response = await fetch('/api/events/sync-all', {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setSyncStatus(`Synced ${data.success} events successfully${data.failed > 0 ? `, ${data.failed} failed` : ''}`);
+        alert(`Successfully synced ${data.success} events to Google Calendar!`);
+      } else {
+        setSyncStatus('Sync failed');
+        alert('Failed to sync events to Google Calendar: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Sync failed:', error);
-      setSyncStatus('Sync failed - check console for details');
-      alert('Failed to sync events to Google Calendar. Please check your Google Calendar configuration.');
+      setSyncStatus('Sync failed');
+      alert('Failed to sync events to Google Calendar. Please try again.');
     } finally {
       setIsSyncing(false);
     }
@@ -502,6 +415,12 @@ const AdminDashboard: React.FC = () => {
                 <Pizza className="w-5 h-5 text-white" />
               </div>
               <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+              <button
+                onClick={() => setShowCreateEventModal(true)}
+                className="ml-4 btn-primary px-4 py-2 text-sm"
+              >
+                + Create Event
+              </button>
             </div>
             <button
               onClick={handleLogout}
@@ -559,7 +478,7 @@ const AdminDashboard: React.FC = () => {
             <div className="flex space-x-3">
               <button
                 onClick={syncToGoogleCalendar}
-                disabled={isSyncing || !googleCalendarService}
+                disabled={isSyncing}
                 className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSyncing ? (
@@ -577,9 +496,7 @@ const AdminDashboard: React.FC = () => {
               <div>
                 <h4 className="font-medium text-gray-900">Google Calendar Status</h4>
                 <p className="text-sm text-gray-600">{syncStatus}</p>
-                {googleCalendarService && (
-                  <p className="text-xs text-green-600 mt-1">✓ Auto-sync enabled for confirmed events</p>
-                )}
+                {/* REMOVE: <p className="text-xs text-green-600 mt-1">✓ Auto-sync enabled for confirmed events</p> */}
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">
@@ -1206,6 +1123,44 @@ const AdminDashboard: React.FC = () => {
                       onClick={() => setShowEmailModal(false)}
                       className="btn-secondary"
                     >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showCreateEventModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold">Create New Event</h3>
+                  <button
+                    onClick={() => setShowCreateEventModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <input type="text" className="w-full border p-2 rounded" placeholder="Event Title" value={newEvent.title} onChange={e => setNewEvent({ ...newEvent, title: e.target.value })} />
+                  <input type="date" className="w-full border p-2 rounded" value={newEvent.date} onChange={e => setNewEvent({ ...newEvent, date: e.target.value })} />
+                  <input type="time" className="w-full border p-2 rounded" value={newEvent.time} onChange={e => setNewEvent({ ...newEvent, time: e.target.value })} />
+                  <input type="text" className="w-full border p-2 rounded" placeholder="Contact Name" value={newEvent.contactName} onChange={e => setNewEvent({ ...newEvent, contactName: e.target.value })} />
+                  <input type="text" className="w-full border p-2 rounded" placeholder="Contact Phone" value={newEvent.contactPhone} onChange={e => setNewEvent({ ...newEvent, contactPhone: e.target.value })} />
+                  <input type="email" className="w-full border p-2 rounded" placeholder="Contact Email" value={newEvent.contactEmail} onChange={e => setNewEvent({ ...newEvent, contactEmail: e.target.value })} />
+                  <input type="number" className="w-full border p-2 rounded" placeholder="Guest Count" value={newEvent.guestCount} min={1} onChange={e => setNewEvent({ ...newEvent, guestCount: Number(e.target.value) })} />
+                  <input type="text" className="w-full border p-2 rounded" placeholder="Event Location" value={newEvent.eventLocation} onChange={e => setNewEvent({ ...newEvent, eventLocation: e.target.value })} />
+                  <textarea className="w-full border p-2 rounded" placeholder="Special Requests / Additional Options" value={newEvent.specialRequests} onChange={e => setNewEvent({ ...newEvent, specialRequests: e.target.value })} />
+                  <input type="text" className="w-full border p-2 rounded" placeholder="Pizza Preferences (comma separated)" value={newEvent.pizzaPreferences.join(', ')} onChange={e => setNewEvent({ ...newEvent, pizzaPreferences: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} />
+                  <div className="flex space-x-3 pt-4 border-t">
+                    <button onClick={handleCreateEvent} className="btn-primary flex items-center space-x-2">
+                      <span>Create Event</span>
+                    </button>
+                    <button onClick={() => setShowCreateEventModal(false)} className="btn-secondary">
                       Cancel
                     </button>
                   </div>

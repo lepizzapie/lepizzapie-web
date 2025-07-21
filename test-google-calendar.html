@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Calendar API Test</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+</head>
+<body>
+    <h1>Google Calendar API Test</h1>
+    <div id="status">Loading...</div>
+    <div id="events"></div>
+
+    <script>
+        // Replace with your actual API key
+        const API_KEY = 'AIzaSyCgbxdfknTkZoQpXCYUBblBVDN-hKWgwNU';
+        const CALENDAR_ID = 'YOUR_CALENDAR_ID_HERE';
+
+        function initClient() {
+            gapi.client.init({
+                'apiKey': API_KEY,
+                'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest']
+            }).then(function() {
+                listEvents();
+            }).catch(function(error) {
+                document.getElementById('status').innerHTML = 'Error: ' + error.message;
+            });
+        }
+
+        function listEvents() {
+            gapi.client.calendar.events.list({
+                'calendarId': CALENDAR_ID,
+                'timeMin': (new Date()).toISOString(),
+                'showDeleted': false,
+                'singleEvents': true,
+                'maxResults': 10,
+                'orderBy': 'startTime'
+            }).then(function(response) {
+                const events = response.result.items;
+                let output = '<h2>Upcoming Events:</h2>';
+                
+                if (events.length > 0) {
+                    events.forEach(function(event) {
+                        const start = event.start.dateTime || event.start.date;
+                        output += '<p><strong>' + event.summary + '</strong> - ' + start + '</p>';
+                    });
+                } else {
+                    output += '<p>No upcoming events found.</p>';
+                }
+                
+                document.getElementById('status').innerHTML = 'Success!';
+                document.getElementById('events').innerHTML = output;
+            }).catch(function(error) {
+                document.getElementById('status').innerHTML = 'Error loading events: ' + error.message;
+            });
+        }
+
+        gapi.load('client', initClient);
+    </script>
+</body>
+</html> 
