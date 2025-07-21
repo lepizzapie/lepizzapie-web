@@ -1,58 +1,45 @@
 # Le Pizza Pie - Mobile Pizza Catering Website
 
-A modern, responsive website for a mobile pizza catering business. Built with React, TypeScript, and Tailwind CSS.
+A modern, responsive website for Le Pizza Pie mobile pizza catering business. Built with React, TypeScript, and Tailwind CSS.
 
-## Features
+## 🍕 Features
 
-### Public Features
-- **Splash Home Page** - Eye-catching landing page with pizza graphics and call-to-action
-- **About Page** - Company story, team information, and values
-- **Menu Page** - Pizza selection and catering packages
-- **Book Event** - Comprehensive booking form with date/time selection
-- **Calendar** - Visual calendar showing available dates and booked events
-- **Social** - Customer testimonials and social media links
+### Customer Features
+- **Home Page**: Beautiful landing page with pizza branding
+- **Menu**: Catering packages and pricing
+- **Event Booking**: Easy online booking system
+- **Calendar**: View available dates and book events
+- **About**: Company story and team information
+- **Social**: Instagram integration and social media links
 
 ### Admin Features
-- **Admin Login** - Secure access via pizza icon in top-right corner
-- **Event Management** - View, edit, confirm, and cancel events
-- **Customer Information** - Access to all customer details and preferences
-- **Calendar Management** - Edit event status and availability
+- **Admin Dashboard**: Complete event management system
+- **Calendar View**: Visual calendar with booking management
+- **Event Management**: Confirm, cancel, and track events
+- **Past Events**: Historical event tracking with notes
+- **Email Management**: Send emails to customers
+- **Google Calendar Sync**: Automatic calendar integration
 
-### Key Features
-- **Real-time Calendar** - Shows available dates and booked events in red
-- **Responsive Design** - Works perfectly on desktop, tablet, and mobile
-- **iPhone Calendar Integration** - Download iCal files for iPhone Calendar app
-- **Event Status Management** - Pending, confirmed, and cancelled states
-- **Customer Data Management** - Complete event details and preferences
+## 🚀 Tech Stack
 
-## Technology Stack
+- **Frontend**: React 18, TypeScript, Tailwind CSS
+- **Routing**: React Router v6
+- **Forms**: React Hook Form
+- **Icons**: Lucide React
+- **Database**: MongoDB Atlas
+- **Hosting**: Railway (recommended) or Vercel
 
-### Frontend
-- **React 18** - Modern React with hooks
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first CSS framework
-- **React Router** - Client-side routing
-- **React Hook Form** - Form handling and validation
-- **Lucide React** - Beautiful icons
-- **date-fns** - Date manipulation utilities
+## 📋 Prerequisites
 
-### Backend (Recommended)
-- **Node.js** with **Express** - API server
-- **MongoDB** - Database for events and user data
-- **JWT** - Authentication for admin access
-- **iCal/ICS** - Calendar file generation
-
-## Getting Started
-
-### Prerequisites
 - Node.js 16+ 
 - npm or yarn
+- MongoDB Atlas account (free)
 
-### Installation
+## 🛠️ Installation
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone <your-repo-url>
    cd lepizzapieweb
    ```
 
@@ -61,122 +48,113 @@ A modern, responsive website for a mobile pizza catering business. Built with Re
    npm install
    ```
 
-3. **Start the development server**
+3. **Set up environment variables**
+   Create a `.env` file in the root directory:
+   ```env
+   MONGODB_URI=mongodb+srv://lepizzapie:ql50Tiqr9bZYDfDC@lepizzapie-db.pajhwi5.mongodb.net/?retryWrites=true&w=majority&appName=lepizzapie-db
+   JWT_SECRET=lepizzapie-admin-secret-key-2025
+   ```
+
+4. **Start development server**
    ```bash
    npm start
    ```
 
-4. **Open your browser**
-   Navigate to `http://localhost:3000`
+5. **Build for production**
+   ```bash
+   npm run build
+   ```
 
-### Build for Production
+## 🌐 Deployment
 
-```bash
-npm run build
-```
+### Railway (Recommended)
+1. Go to [railway.app](https://railway.app)
+2. Connect your GitHub account
+3. Import your repository
+4. Add environment variables
+5. Deploy automatically
 
-## Project Structure
+### Vercel
+1. Go to [vercel.com](https://vercel.com)
+2. Connect your GitHub account
+3. Import your repository
+4. Add environment variables
+5. Deploy automatically
 
-```
-src/
-├── components/          # Reusable components
-│   └── Navigation.tsx   # Main navigation with admin access
-├── pages/              # Page components
-│   ├── Home.tsx        # Splash page with pizza graphics
-│   ├── About.tsx       # Company information
-│   ├── Menu.tsx        # Pizza menu and packages
-│   ├── BookEvent.tsx   # Event booking form
-│   ├── Calendar.tsx    # Visual calendar component
-│   ├── Social.tsx      # Testimonials and social links
-│   ├── AdminLogin.tsx  # Admin authentication
-│   └── AdminDashboard.tsx # Event management dashboard
-├── App.tsx             # Main app with routing
-├── index.tsx           # React entry point
-└── index.css           # Global styles and Tailwind imports
-```
+## 🔐 Admin Access
 
-## Admin Access
+**Default Admin Credentials:**
+- **Username**: admin
+- **Password**: lepizzapie2025
+- **Admin URL**: `your-domain.com/admin`
 
-- **URL**: `/admin`
-- **Demo Credentials**: 
-  - Username: `admin`
-  - Password: `pizza123`
-- **Access**: Click the pizza icon in the top-right corner of any page
+## 📱 Pages
 
-## Calendar Integration
+- **Home** (`/`): Landing page with hero section
+- **About** (`/about`): Company story and statistics
+- **Menu** (`/menu`): Catering packages and pricing
+- **Book Event** (`/book`): Event booking form
+- **Calendar** (`/calendar`): Available dates and bookings
+- **Social** (`/social`): Instagram feed and social links
+- **Admin Login** (`/admin`): Admin authentication
+- **Admin Dashboard** (`/admin/dashboard`): Event management
 
-The calendar system supports:
-- **Visual Calendar** - Monthly view with color-coded availability
-- **Event Details** - Click events to see full information
-- **Status Management** - Pending, confirmed, and cancelled states
-- **iCal Export** - Download calendar files for iPhone Calendar app
-
-## Customization
+## 🎨 Customization
 
 ### Colors
-The website uses a custom pizza-themed color palette defined in `tailwind.config.js`:
-- `pizza-red`: #DC2626
-- `pizza-orange`: #EA580C  
-- `pizza-yellow`: #F59E0B
-- `pizza-cream`: #FEF3C7
+The website uses a custom color palette defined in `tailwind.config.js`:
+- **Pizza Red**: `#DC2626`
+- **Pizza Orange**: `#EA580C`
+- **Pizza Yellow**: `#F59E0B`
+- **Pizza Cream**: `#FEF3C7`
 
-### Fonts
-- **Display**: Playfair Display (headings)
-- **Body**: Inter (body text)
+### Content
+Update content in the respective page components:
+- `src/pages/Home.tsx` - Home page content
+- `src/pages/About.tsx` - About page content
+- `src/pages/Menu.tsx` - Menu items and pricing
+- `src/pages/AdminDashboard.tsx` - Mock event data
 
-## Deployment
+## 📊 Database Schema
 
-### Recommended Platforms
-- **Frontend**: Vercel, Netlify, or GitHub Pages
-- **Backend**: Railway, Render, or Heroku
-
-### Environment Variables
-Create a `.env` file for production:
-```env
-REACT_APP_API_URL=your-backend-url
-REACT_APP_ADMIN_EMAIL=admin@lepizzapie.com
+### Events Collection
+```javascript
+{
+  id: string,
+  date: string,
+  time: string,
+  title: string,
+  contactName: string,
+  contactPhone: string,
+  contactEmail: string,
+  guestCount: number,
+  eventLocation: string,
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed',
+  specialRequests: string,
+  pizzaPreferences: string[],
+  completedAt?: string,
+  notes?: string
+}
 ```
 
-## Future Enhancements
+## 🔧 Environment Variables
 
-### Backend Integration
-- [ ] API endpoints for event management
-- [ ] Real-time calendar updates
-- [ ] Email notifications
-- [ ] Payment processing
-- [ ] Customer portal
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `MONGODB_URI` | MongoDB connection string | Yes |
+| `JWT_SECRET` | Secret for admin authentication | Yes |
+| `REACT_APP_GOOGLE_API_KEY` | Google Calendar API key | No |
+| `REACT_APP_GOOGLE_CLIENT_ID` | Google OAuth client ID | No |
+| `REACT_APP_GOOGLE_CALENDAR_ID` | Google Calendar ID | No |
 
-### Features
-- [ ] Photo gallery from events
-- [ ] Customer reviews system
-- [ ] SMS notifications
-- [ ] Multi-location support
-- [ ] Inventory management
+## 📞 Support
 
-### Mobile App
-- [ ] React Native app for admin
-- [ ] Push notifications
-- [ ] Offline capability
-- [ ] GPS tracking for deliveries
+For deployment help, see `DEPLOYMENT_GUIDE.md` for detailed instructions.
 
-## Contributing
+## 📄 License
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-For support or questions, please contact:
-- Email: info@lepizzapie.com
-- Phone: (555) 123-4567
+This project is for Le Pizza Pie business use.
 
 ---
 
-**Le Pizza Pie** - Bringing authentic pizza magic to your events since 2018 🍕 
+**Built with ❤️ for Le Pizza Pie** 
