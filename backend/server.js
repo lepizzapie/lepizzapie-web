@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -11,6 +12,8 @@ app.use(express.json());
 
 // Routes
 app.use('/api', require('./routes/instagram'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/events', require('./routes/events'));
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../build')));
