@@ -292,7 +292,7 @@ const BookEvent: React.FC = () => {
                 Event Details
               </h3>
               
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-4 gap-6">
                 {/* Calendar Date Picker */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
