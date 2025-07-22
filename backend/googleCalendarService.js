@@ -1,51 +1,105 @@
 // Google Calendar Service Account Integration (Node.js backend)
-// For now, using a mock service to avoid environment variable issues
+const { google } = require('googleapis');
 
-console.log('🔍 Google Calendar Service - Using Mock Implementation');
-
+let calendar = null;
 let isInitialized = false;
+let calendarId = process.env.GOOGLE_CALENDAR_ID;
+let jwtClient = null;
 
-// Mock Google Calendar service
 function initializeCalendarService() {
-  console.log('🚀 Initializing Mock Google Calendar service...');
-  console.log('⚠️  Google Calendar integration is currently disabled due to environment variable issues');
-  console.log('   This is a temporary solution while we troubleshoot the service account key setup');
-  isInitialized = false;
-  return false;
+  try {
+    const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+    if (!key) {
+      console.error('GOOGLE_SERVICE_ACCOUNT_KEY env var not set');
+      isInitialized = false;
+      return false;
+    }
+    const keyObj = typeof key === 'string' ? JSON.parse(key) : key;
+    jwtClient = new google.auth.JWT(
+      keyObj.client_email,
+      null,
+      keyObj.private_key,
+      ['https://www.googleapis.com/auth/calendar']
+    );
+    calendar = google.calendar({ version: 'v3', auth: jwtClient });
+    isInitialized = true;
+    console.log('✅ Google Calendar service initialized');
+    return true;
+  } catch (err) {
+    console.error('Failed to initialize Google Calendar service:', err);
+    isInitialized = false;
+    return false;
+  }
 }
 
 // Initialize on module load
-console.log('🔄 Calling initializeCalendarService...');
 initializeCalendarService();
 
 async function createEvent(event) {
-  console.log('📅 Mock: Would create Google Calendar event:', event.summary || 'Untitled Event');
-  return { 
-    id: 'mock-calendar-id-' + Date.now(), 
-    summary: event.summary || 'Untitled Event',
-    htmlLink: 'https://calendar.google.com (mock)',
-    status: 'confirmed'
-  };
+  if (!isInitialized) initializeCalendarService();
+  if (!isInitialized) throw new Error('Google Calendar not initialized');
+  try {
+    const response = await calendar.events.insert({
+      calendarId,
+      resource: event,
+      sendUpdates: 'all',
+    });
+    return response.data;
+  } catch (err) {
+    console.error('Error creating Google Calendar event:', err);
+    throw err;
+  }
 }
 
 async function updateEvent(eventId, event) {
-  console.log('📅 Mock: Would update Google Calendar event:', eventId);
-  return { 
-    id: eventId, 
-    summary: event.summary || 'Untitled Event',
-    htmlLink: 'https://calendar.google.com (mock)',
-    status: 'confirmed'
-  };
+  if (!isInitialized) initializeCalendarService();
+  if (!isInitialized) throw new Error('Google Calendar not initialized');
+  try {
+    const response = await calendar.events.update({
+      calendarId,
+      eventId,
+      resource: event,
+      sendUpdates: 'all',
+    });
+    return response.data;
+  } catch (err) {
+    console.error('Error updating Google Calendar event:', err);
+    throw err;
+  }
 }
 
 async function deleteEvent(eventId) {
-  console.log('📅 Mock: Would delete Google Calendar event:', eventId);
-  return true;
+  if (!isInitialized) initializeCalendarService();
+  if (!isInitialized) throw new Error('Google Calendar not initialized');
+  try {
+    await calendar.events.delete({
+      calendarId,
+      eventId,
+      sendUpdates: 'all',
+    });
+    return true;
+  } catch (err) {
+    console.error('Error deleting Google Calendar event:', err);
+    throw err;
+  }
 }
 
 async function listEvents(timeMin, timeMax) {
-  console.log('📅 Mock: Would list Google Calendar events');
-  return [];
+  if (!isInitialized) initializeCalendarService();
+  if (!isInitialized) throw new Error('Google Calendar not initialized');
+  try {
+    const response = await calendar.events.list({
+      calendarId,
+      timeMin,
+      timeMax,
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+    return response.data.items;
+  } catch (err) {
+    console.error('Error listing Google Calendar events:', err);
+    throw err;
+  }
 }
 
 module.exports = {
