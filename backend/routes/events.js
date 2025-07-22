@@ -1,5 +1,4 @@
 const express = require('express');
-const calendarService = require('../googleCalendarService');
 const router = express.Router();
 
 // GET /api/events/availability
@@ -25,6 +24,9 @@ router.post('/', async (req, res) => {
     // Try to create Google Calendar event
     let calendarEvent = null;
     try {
+      // Dynamically import calendar service to avoid loading issues
+      const calendarService = require('../googleCalendarService');
+      
       const googleEvent = {
         summary: `Pizza Event - ${eventData.name || 'Event'}`,
         description: `Contact: ${eventData.email || 'No email provided'}\nGuests: ${eventData.guests || 'Not specified'}\nSpecial Requests: ${eventData.specialRequests || 'None'}`,
