@@ -4,7 +4,7 @@ const { google } = require('googleapis');
 let calendar = null;
 let isInitialized = false;
 let calendarId = process.env.GOOGLE_CALENDAR_ID;
-let jwtClient = null;
+let auth = null;
 
 function initializeCalendarService() {
   try {
@@ -41,25 +41,23 @@ function initializeCalendarService() {
       return false;
     }
     
-    // Use JWT authentication directly
+    // Use Application Default Credentials approach
     try {
-      console.log('Creating JWT client...');
-      jwtClient = new google.auth.JWT(
-        keyObj.client_email,
-        null,
-        keyObj.private_key,
-        ['https://www.googleapis.com/auth/calendar']
-      );
-      console.log('✅ JWT client created successfully');
-    } catch (jwtError) {
-      console.error('❌ Failed to create JWT client:', jwtError.message);
+      console.log('Creating auth client...');
+      auth = new google.auth.GoogleAuth({
+        credentials: keyObj,
+        scopes: ['https://www.googleapis.com/auth/calendar']
+      });
+      console.log('✅ Auth client created successfully');
+    } catch (authError) {
+      console.error('❌ Failed to create auth client:', authError.message);
       isInitialized = false;
       return false;
     }
     
     try {
       console.log('Creating calendar client...');
-      calendar = google.calendar({ version: 'v3', auth: jwtClient });
+      calendar = google.calendar({ version: 'v3', auth });
       calendarId = calendarIdEnv;
       isInitialized = true;
       console.log('✅ Google Calendar service initialized successfully');
