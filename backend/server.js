@@ -16,17 +16,31 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes with error handling
+// Routes with individual error handling
+console.log('Loading routes...');
+
+// Load instagram routes
 try {
-  console.log('Loading routes...');
   app.use('/api', require('./routes/instagram'));
   console.log('Instagram routes loaded');
+} catch (error) {
+  console.error('Error loading instagram routes:', error);
+}
+
+// Load admin routes
+try {
   app.use('/api/admin', require('./routes/admin'));
   console.log('Admin routes loaded');
+} catch (error) {
+  console.error('Error loading admin routes:', error);
+}
+
+// Load events routes
+try {
   app.use('/api/events', require('./routes/events'));
   console.log('Events routes loaded');
 } catch (error) {
-  console.error('Error loading routes:', error);
+  console.error('Error loading events routes:', error);
 }
 
 // Health check endpoint
