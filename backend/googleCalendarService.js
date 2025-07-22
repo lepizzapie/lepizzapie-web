@@ -7,20 +7,48 @@ require('dotenv').config();
 const SERVICE_ACCOUNT_KEY_PATH = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || 'lepizzapieweb-0bbb5492aa73.json';
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
 
-// Load service account credentials
-const keyFilePath = path.join(__dirname, SERVICE_ACCOUNT_KEY_PATH);
-const credentials = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
+let auth, calendar;
+let isInitialized = false;
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar'];
+// Initialize Google Calendar service
+function initializeCalendarService() {
+  try {
+    const keyFilePath = path.join(__dirname, SERVICE_ACCOUNT_KEY_PATH);
+    
+    // Check if the service account key file exists
+    if (!fs.existsSync(keyFilePath)) {
+      console.warn('Google Calendar service account key file not found. Calendar sync will be disabled.');
+      return false;
+    }
+    
+    const credentials = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
+    const SCOPES = ['https://www.googleapis.com/auth/calendar'];
+    
+    auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: SCOPES,
+    });
+    
+    calendar = google.calendar({ version: 'v3', auth });
+    isInitialized = true;
+    console.log('Google Calendar service initialized successfully.');
+    return true;
+  } catch (error) {
+    console.warn('Failed to initialize Google Calendar service:', error.message);
+    console.warn('Calendar sync will be disabled.');
+    return false;
+  }
+}
 
-const auth = new google.auth.GoogleAuth({
-  credentials,
-  scopes: SCOPES,
-});
-
-const calendar = google.calendar({ version: 'v3', auth });
+// Initialize on module load
+initializeCalendarService();
 
 async function createEvent(event) {
+  if (!isInitialized) {
+    console.warn('Google Calendar service not available. Event not synced to calendar.');
+    return { id: 'mock-calendar-id', summary: event.summary };
+  }
+  
   try {
     const response = await calendar.events.insert({
       calendarId: CALENDAR_ID,
@@ -34,6 +62,11 @@ async function createEvent(event) {
 }
 
 async function updateEvent(eventId, event) {
+  if (!isInitialized) {
+    console.warn('Google Calendar service not available. Event not updated in calendar.');
+    return { id: eventId, summary: event.summary };
+  }
+  
   try {
     const response = await calendar.events.update({
       calendarId: CALENDAR_ID,
@@ -48,6 +81,11 @@ async function updateEvent(eventId, event) {
 }
 
 async function deleteEvent(eventId) {
+  if (!isInitialized) {
+    console.warn('Google Calendar service not available. Event not deleted from calendar.');
+    return true;
+  }
+  
   try {
     await calendar.events.delete({
       calendarId: CALENDAR_ID,
@@ -61,6 +99,11 @@ async function deleteEvent(eventId) {
 }
 
 async function listEvents(timeMin, timeMax) {
+  if (!isInitialized) {
+    console.warn('Google Calendar service not available. Returning empty event list.');
+    return [];
+  }
+  
   try {
     const response = await calendar.events.list({
       calendarId: CALENDAR_ID,
@@ -81,4 +124,5 @@ module.exports = {
   updateEvent,
   deleteEvent,
   listEvents,
+  isInitialized: () => isInitialized,
 }; 
