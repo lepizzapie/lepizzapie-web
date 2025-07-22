@@ -1,5 +1,17 @@
 // Google Calendar Service Account Integration (Node.js backend)
-const { google } = require('googleapis');
+let auth, calendar;
+let isInitialized = false;
+let google;
+
+// Try to load Google APIs, but don't fail if not available
+try {
+  const { google: googleApi } = require('googleapis');
+  google = googleApi;
+} catch (error) {
+  console.warn('Google APIs not available. Calendar sync will be disabled.');
+  google = null;
+}
+
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
@@ -7,11 +19,13 @@ require('dotenv').config();
 const SERVICE_ACCOUNT_KEY_PATH = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || 'lepizzapieweb-0bbb5492aa73.json';
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
 
-let auth, calendar;
-let isInitialized = false;
-
 // Initialize Google Calendar service
 function initializeCalendarService() {
+  if (!google) {
+    console.warn('Google APIs not available. Calendar sync will be disabled.');
+    return false;
+  }
+
   try {
     const keyFilePath = path.join(__dirname, SERVICE_ACCOUNT_KEY_PATH);
     
