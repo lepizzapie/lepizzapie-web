@@ -15,12 +15,14 @@ app.use('/api', require('./routes/instagram'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/events', require('./routes/events'));
 
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, '../build')));
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Le Pizza Pie Backend is running' });
+});
 
-// Handle React routing, return all requests to React app
+// Catch-all for API routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+  res.status(404).json({ error: 'API endpoint not found' });
 });
 
 app.listen(PORT, () => {
