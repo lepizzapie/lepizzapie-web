@@ -181,6 +181,123 @@ router.delete('/unavailable', async (req, res) => {
   }
 });
 
+// POST /api/events/confirm - Confirm an event and sync to Google Calendar
+router.post('/confirm', async (req, res) => {
+  let client;
+  try {
+    const { eventId } = req.body;
+    if (!eventId) return res.status(400).json({ error: 'Event ID is required' });
+    
+    // Update event status in database
+    client = new MongoClient(uri);
+    await client.connect();
+    const db = client.db(dbName);
+    
+    const event = await db.collection(collectionName).findOne({ _id: new ObjectId(eventId) });
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    
+    // Update status to confirmed
+    await db.collection(collectionName).updateOne(
+      { _id: new ObjectId(eventId) },
+      { $set: { status: 'confirmed' } }
+    );
+    
+    // Sync to Google Calendar
+    let calendarEvent = null;
+    try {
+      const calendarService = require('../googleCalendarService');
+      const googleEvent = {
+        summary: event.title,
+        description: `Contact: ${event.contactEmail || 'No email provided'}\nGuests: ${event.guestCount || 'Not specified'}\nSpecial Requests: ${event.specialRequests || 'None'}`,
+        start: {
+          dateTime: new Date(`${event.date}T${event.time || '18:00'}:00`).toISOString(),
+          timeZone: 'America/Los_Angeles',
+        },
+        end: {
+          dateTime: new Date(new Date(`${event.date}T${event.time || '18:00'}:00`).getTime() + 3 * 60 * 60 * 1000).toISOString(),
+          timeZone: 'America/Los_Angeles',
+        },
+        location: event.eventLocation || 'Mobile Pizza Service',
+        attendees: [
+          { email: event.contactEmail, displayName: event.contactName }
+        ],
+      };
+      calendarEvent = await calendarService.createEvent(googleEvent);
+      console.log('Event confirmed and synced to Google Calendar:', calendarEvent.id);
+    } catch (calendarError) {
+      console.warn('Failed to sync confirmed event to Google Calendar:', calendarError.message);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Event confirmed',
+      calendarEvent: calendarEvent ? { id: calendarEvent.id, synced: true } : { synced: false }
+    });
+  } catch (err) {
+    console.error('Error confirming event:', err);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  } finally {
+    if (client) await client.close();
+  }
+});
+
+// POST /api/events/sync-all - Sync all confirmed events to Google Calendar
+router.post('/sync-all', async (req, res) => {
+  let client;
+  try {
+    client = new MongoClient(uri);
+    await client.connect();
+    const db = client.db(dbName);
+    
+    // Get all confirmed events
+    const confirmedEvents = await db.collection(collectionName)
+      .find({ status: 'confirmed' })
+      .toArray();
+    
+    const calendarService = require('../googleCalendarService');
+    let success = 0;
+    let failed = 0;
+    
+    for (const event of confirmedEvents) {
+      try {
+        const googleEvent = {
+          summary: event.title,
+          description: `Contact: ${event.contactEmail || 'No email provided'}\nGuests: ${event.guestCount || 'Not specified'}\nSpecial Requests: ${event.specialRequests || 'None'}`,
+          start: {
+            dateTime: new Date(`${event.date}T${event.time || '18:00'}:00`).toISOString(),
+            timeZone: 'America/Los_Angeles',
+          },
+          end: {
+            dateTime: new Date(new Date(`${event.date}T${event.time || '18:00'}:00`).getTime() + 3 * 60 * 60 * 1000).toISOString(),
+            timeZone: 'America/Los_Angeles',
+          },
+          location: event.eventLocation || 'Mobile Pizza Service',
+          attendees: [
+            { email: event.contactEmail, displayName: event.contactName }
+          ],
+        };
+        await calendarService.createEvent(googleEvent);
+        success++;
+      } catch (error) {
+        console.error(`Failed to sync event ${event._id}:`, error);
+        failed++;
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `Synced ${success} events successfully${failed > 0 ? `, ${failed} failed` : ''}`,
+      synced: success,
+      failed: failed
+    });
+  } catch (err) {
+    console.error('Error syncing events:', err);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  } finally {
+    if (client) await client.close();
+  }
+});
+
 // Helper to get next day in 'YYYY-MM-DD' format
 function getNextDay(dateStr) {
   const date = new Date(dateStr);
