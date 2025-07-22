@@ -9,24 +9,41 @@ let jwtClient = null;
 function initializeCalendarService() {
   try {
     const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+    const calendarIdEnv = process.env.GOOGLE_CALENDAR_ID;
+    
     if (!key) {
       console.error('GOOGLE_SERVICE_ACCOUNT_KEY env var not set');
       isInitialized = false;
       return false;
     }
+    
+    if (!calendarIdEnv) {
+      console.error('GOOGLE_CALENDAR_ID env var not set');
+      isInitialized = false;
+      return false;
+    }
+    
+    console.log('Initializing Google Calendar service...');
+    console.log('Calendar ID:', calendarIdEnv);
+    
     const keyObj = typeof key === 'string' ? JSON.parse(key) : key;
+    console.log('Service account email:', keyObj.client_email);
+    
     jwtClient = new google.auth.JWT(
       keyObj.client_email,
       null,
       keyObj.private_key,
       ['https://www.googleapis.com/auth/calendar']
     );
+    
     calendar = google.calendar({ version: 'v3', auth: jwtClient });
+    calendarId = calendarIdEnv;
     isInitialized = true;
-    console.log('✅ Google Calendar service initialized');
+    console.log('✅ Google Calendar service initialized successfully');
     return true;
   } catch (err) {
-    console.error('Failed to initialize Google Calendar service:', err);
+    console.error('Failed to initialize Google Calendar service:', err.message);
+    console.error('Error details:', err);
     isInitialized = false;
     return false;
   }
