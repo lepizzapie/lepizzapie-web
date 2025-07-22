@@ -15,8 +15,23 @@ try {
 
 require('dotenv').config();
 
-const SERVICE_ACCOUNT_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+// Clean the environment variables to handle newlines and special characters
+let SERVICE_ACCOUNT_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
+
+// Clean the service account key if it exists
+if (SERVICE_ACCOUNT_KEY) {
+  // Remove any leading/trailing whitespace and quotes
+  SERVICE_ACCOUNT_KEY = SERVICE_ACCOUNT_KEY.trim();
+  if (SERVICE_ACCOUNT_KEY.startsWith('"') && SERVICE_ACCOUNT_KEY.endsWith('"')) {
+    SERVICE_ACCOUNT_KEY = SERVICE_ACCOUNT_KEY.slice(1, -1);
+  }
+  if (SERVICE_ACCOUNT_KEY.startsWith("'") && SERVICE_ACCOUNT_KEY.endsWith("'")) {
+    SERVICE_ACCOUNT_KEY = SERVICE_ACCOUNT_KEY.slice(1, -1);
+  }
+  // Replace escaped newlines with actual newlines
+  SERVICE_ACCOUNT_KEY = SERVICE_ACCOUNT_KEY.replace(/\\n/g, '\n');
+}
 
 console.log('🔍 Google Calendar Service Debug Info:');
 console.log('  - SERVICE_ACCOUNT_KEY exists:', !!SERVICE_ACCOUNT_KEY);
