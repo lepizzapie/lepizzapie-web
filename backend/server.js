@@ -77,8 +77,10 @@ app.get('/test-calendar-service', async (req, res) => {
     // Test service account key parsing
     let keyParseError = null;
     let parsedKey = null;
+    let keyPreview = null;
     try {
       if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+        keyPreview = process.env.GOOGLE_SERVICE_ACCOUNT_KEY.substring(0, 100) + '...';
         parsedKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
       }
     } catch (e) {
@@ -102,6 +104,7 @@ app.get('/test-calendar-service', async (req, res) => {
       hasServiceAccountKey: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
       hasCalendarId: !!process.env.GOOGLE_CALENDAR_ID,
       serviceAccountKeyLength: process.env.GOOGLE_SERVICE_ACCOUNT_KEY ? process.env.GOOGLE_SERVICE_ACCOUNT_KEY.length : 0,
+      keyPreview,
       keyParseError,
       parsedKey: parsedKey ? { client_email: parsedKey.client_email, hasPrivateKey: !!parsedKey.private_key } : null,
       serviceError
