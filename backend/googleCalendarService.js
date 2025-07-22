@@ -25,24 +25,50 @@ function initializeCalendarService() {
     
     console.log('Initializing Google Calendar service...');
     console.log('Calendar ID:', calendarIdEnv);
+    console.log('Key type:', typeof key);
+    console.log('Key length:', key.length);
     
     // Parse the service account key
-    const keyObj = typeof key === 'string' ? JSON.parse(key) : key;
-    console.log('Service account email:', keyObj.client_email);
+    let keyObj;
+    try {
+      keyObj = typeof key === 'string' ? JSON.parse(key) : key;
+      console.log('✅ Service account key parsed successfully');
+      console.log('Service account email:', keyObj.client_email);
+      console.log('Has private key:', !!keyObj.private_key);
+    } catch (parseError) {
+      console.error('❌ Failed to parse service account key:', parseError.message);
+      isInitialized = false;
+      return false;
+    }
     
     // Use JWT authentication directly
-    jwtClient = new google.auth.JWT(
-      keyObj.client_email,
-      null,
-      keyObj.private_key,
-      ['https://www.googleapis.com/auth/calendar']
-    );
+    try {
+      console.log('Creating JWT client...');
+      jwtClient = new google.auth.JWT(
+        keyObj.client_email,
+        null,
+        keyObj.private_key,
+        ['https://www.googleapis.com/auth/calendar']
+      );
+      console.log('✅ JWT client created successfully');
+    } catch (jwtError) {
+      console.error('❌ Failed to create JWT client:', jwtError.message);
+      isInitialized = false;
+      return false;
+    }
     
-    calendar = google.calendar({ version: 'v3', auth: jwtClient });
-    calendarId = calendarIdEnv;
-    isInitialized = true;
-    console.log('✅ Google Calendar service initialized successfully');
-    return true;
+    try {
+      console.log('Creating calendar client...');
+      calendar = google.calendar({ version: 'v3', auth: jwtClient });
+      calendarId = calendarIdEnv;
+      isInitialized = true;
+      console.log('✅ Google Calendar service initialized successfully');
+      return true;
+    } catch (calendarError) {
+      console.error('❌ Failed to create calendar client:', calendarError.message);
+      isInitialized = false;
+      return false;
+    }
   } catch (err) {
     console.error('Failed to initialize Google Calendar service:', err.message);
     console.error('Error details:', err);
