@@ -36,13 +36,14 @@ function initializeCalendarService() {
 
   try {
     // Parse the service account key from environment variable
-    const credentials = JSON.parse(SERVICE_ACCOUNT_KEY);
-    const SCOPES = ['https://www.googleapis.com/auth/calendar'];
+    const key = JSON.parse(SERVICE_ACCOUNT_KEY);
     
-    auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: SCOPES,
-    });
+    auth = new google.auth.JWT(
+      key.client_email,
+      null,
+      key.private_key,
+      ['https://www.googleapis.com/auth/calendar']
+    );
     
     calendar = google.calendar({ version: 'v3', auth });
     isInitialized = true;
@@ -51,6 +52,7 @@ function initializeCalendarService() {
   } catch (error) {
     console.warn('Failed to initialize Google Calendar service:', error.message);
     console.warn('Calendar sync will be disabled.');
+    isInitialized = false;
     return false;
   }
 }
