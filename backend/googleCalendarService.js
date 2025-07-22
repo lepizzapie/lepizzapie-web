@@ -1,4 +1,5 @@
 // Google Calendar Service Account Integration (Node.js backend)
+// Last updated: 2025-07-22 18:30 UTC - Force redeploy
 const { google } = require('googleapis');
 
 let calendar = null;
