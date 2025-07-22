@@ -62,6 +62,29 @@ app.get('/test-calendar-env', (req, res) => {
   });
 });
 
+// Test Google Calendar service status
+app.get('/test-calendar-service', async (req, res) => {
+  try {
+    const calendarService = require('./googleCalendarService');
+    const isInitialized = calendarService.isInitialized();
+    
+    res.json({
+      isInitialized,
+      hasGoogleApis: !!require('googleapis'),
+      hasServiceAccountKey: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
+      hasCalendarId: !!process.env.GOOGLE_CALENDAR_ID
+    });
+  } catch (error) {
+    res.json({
+      error: error.message,
+      isInitialized: false,
+      hasGoogleApis: false,
+      hasServiceAccountKey: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
+      hasCalendarId: !!process.env.GOOGLE_CALENDAR_ID
+    });
+  }
+});
+
 // Catch-all for API routes
 app.get('*', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
