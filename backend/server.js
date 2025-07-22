@@ -65,14 +65,46 @@ app.get('/test-calendar-env', (req, res) => {
 // Test Google Calendar service status
 app.get('/test-calendar-service', async (req, res) => {
   try {
-    const calendarService = require('./googleCalendarService');
-    const isInitialized = calendarService.isInitialized();
+    // Test if googleapis is available
+    let hasGoogleApis = false;
+    try {
+      require('googleapis');
+      hasGoogleApis = true;
+    } catch (e) {
+      hasGoogleApis = false;
+    }
+    
+    // Test service account key parsing
+    let keyParseError = null;
+    let parsedKey = null;
+    try {
+      if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+        parsedKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
+      }
+    } catch (e) {
+      keyParseError = e.message;
+    }
+    
+    // Test calendar service
+    let calendarService = null;
+    let isInitialized = false;
+    let serviceError = null;
+    try {
+      calendarService = require('./googleCalendarService');
+      isInitialized = calendarService.isInitialized();
+    } catch (e) {
+      serviceError = e.message;
+    }
     
     res.json({
       isInitialized,
-      hasGoogleApis: !!require('googleapis'),
+      hasGoogleApis,
       hasServiceAccountKey: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
-      hasCalendarId: !!process.env.GOOGLE_CALENDAR_ID
+      hasCalendarId: !!process.env.GOOGLE_CALENDAR_ID,
+      serviceAccountKeyLength: process.env.GOOGLE_SERVICE_ACCOUNT_KEY ? process.env.GOOGLE_SERVICE_ACCOUNT_KEY.length : 0,
+      keyParseError,
+      parsedKey: parsedKey ? { client_email: parsedKey.client_email, hasPrivateKey: !!parsedKey.private_key } : null,
+      serviceError
     });
   } catch (error) {
     res.json({
