@@ -108,15 +108,11 @@ const BookEvent: React.FC = () => {
     while (currentDate <= endDate) {
       const dateString = currentDate.toISOString().split('T')[0];
       
-      // Mock logic: weekends are available, weekdays are sometimes available
-      const dayOfWeek = currentDate.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      const isAvailable = isWeekend || Math.random() > 0.7; // 30% chance for weekdays
-      
+      // Make all dates available by default when API fails
       dates.push({
         date: dateString,
-        available: isAvailable,
-        reason: isAvailable ? undefined : 'Not available'
+        available: true,
+        reason: undefined
       });
       
       currentDate.setDate(currentDate.getDate() + 1);
