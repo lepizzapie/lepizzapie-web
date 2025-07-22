@@ -5,15 +5,20 @@ require('dotenv').config();
 
 const router = express.Router();
 
-const uri = process.env.MONGODB_URI;
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db';
 const client = new MongoClient(uri);
 const dbName = 'lepizzapie-db';
 const collectionName = 'events';
 
 // Helper: get events collection
 async function getEventsCollection() {
-  await client.connect();
-  return client.db(dbName).collection(collectionName);
+  try {
+    await client.connect();
+    return client.db(dbName).collection(collectionName);
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw new Error('Database connection failed');
+  }
 }
 
 // POST /api/events/confirm
@@ -120,6 +125,42 @@ router.get('/', async (req, res) => {
     const events = await eventsCol.find({}).toArray();
     res.json(events);
   } catch (err) {
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+});
+
+// GET /api/events/availability - get available dates for booking
+router.get('/availability', async (req, res) => {
+  try {
+    const eventsCol = await getEventsCollection();
+    
+    // Get booked dates from confirmed events
+    const bookedEvents = await eventsCol.find({ status: 'confirmed' }).toArray();
+    const bookedDates = bookedEvents.map(event => event.eventDate);
+    
+    // Generate available dates for next 6 months
+    const availableDates = [];
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 6);
+    
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const dateString = currentDate.toISOString().split('T')[0];
+      const isBooked = bookedDates.includes(dateString);
+      
+      availableDates.push({
+        date: dateString,
+        available: !isBooked,
+        reason: isBooked ? 'Already booked' : undefined
+      });
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    res.json(availableDates);
+  } catch (err) {
+    console.error('Error fetching availability:', err);
     res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
