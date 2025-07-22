@@ -34,16 +34,7 @@ const AdminDashboard: React.FC = () => {
   const [showPastEvents, setShowPastEvents] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [unavailableDates, setUnavailableDates] = useState<string[]>([
-    '2025-01-15',
-    '2025-01-20',
-    '2025-02-10',
-    '2025-02-25',
-    '2026-01-10',
-    '2026-01-25',
-    '2026-02-05',
-    '2026-02-20'
-  ]);
+  const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
 
   // On mount, fetch events from backend
   const [events, setEvents] = useState<Event[]>([]);
@@ -320,21 +311,56 @@ const AdminDashboard: React.FC = () => {
     return events.filter(event => event.date === dateString);
   };
 
-  const isDateUnavailable = (dateString: string) => {
-    return unavailableDates.includes(dateString);
+  // Fetch unavailable dates from backend (Google Calendar) on mount and after changes
+  const fetchUnavailableDates = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/events/availability`);
+      if (response.ok) {
+        const data = await response.json();
+        const unavailable = data.filter((d: any) => !d.available).map((d: any) => d.date);
+        setUnavailableDates(unavailable);
+      }
+    } catch (error) {
+      console.error('Failed to fetch unavailable dates:', error);
+    }
   };
 
-  const toggleDateAvailability = (dateString: string) => {
-    if (isDateUnavailable(dateString)) {
-      setUnavailableDates(unavailableDates.filter(date => date !== dateString));
+  useEffect(() => {
+    fetchUnavailableDates();
+  }, []);
+
+  // Toggle date availability and sync with backend/Google Calendar
+  const toggleDateAvailability = async (dateString: string) => {
+    if (unavailableDates.includes(dateString)) {
+      // Mark as available (delete UNAVAILABLE event)
+      try {
+        await fetch(`${API_BASE_URL}/api/events/unavailable`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: dateString })
+        });
+        await fetchUnavailableDates();
+      } catch (error) {
+        alert('Failed to mark date as available.');
+      }
     } else {
-      setUnavailableDates([...unavailableDates, dateString]);
+      // Mark as unavailable (create UNAVAILABLE event)
+      try {
+        await fetch(`${API_BASE_URL}/api/events/unavailable`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: dateString })
+        });
+        await fetchUnavailableDates();
+      } catch (error) {
+        alert('Failed to mark date as unavailable.');
+      }
     }
   };
 
   const getDateStatus = (dateString: string) => {
     const dateEvents = getEventsForDate(dateString);
-    const isUnavailable = isDateUnavailable(dateString);
+    const isUnavailable = unavailableDates.includes(dateString);
     
     if (isUnavailable) return 'unavailable';
     if (dateEvents.length > 0) {
