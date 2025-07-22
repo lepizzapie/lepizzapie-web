@@ -107,7 +107,8 @@ app.get('/test-calendar-service', async (req, res) => {
       keyPreview,
       keyParseError,
       parsedKey: parsedKey ? { client_email: parsedKey.client_email, hasPrivateKey: !!parsedKey.private_key } : null,
-      serviceError
+      serviceError,
+      note: 'Currently using mock Google Calendar service due to environment variable issues'
     });
   } catch (error) {
     res.json({
@@ -115,7 +116,8 @@ app.get('/test-calendar-service', async (req, res) => {
       isInitialized: false,
       hasGoogleApis: false,
       hasServiceAccountKey: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
-      hasCalendarId: !!process.env.GOOGLE_CALENDAR_ID
+      hasCalendarId: !!process.env.GOOGLE_CALENDAR_ID,
+      note: 'Currently using mock Google Calendar service due to environment variable issues'
     });
   }
 });
