@@ -44,22 +44,29 @@ try {
 }
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Le Pizza Pie Backend is running' });
-});
-
-// Test endpoint
 app.get('/test', (req, res) => {
   res.json({ message: 'Backend is working!' });
 });
 
+// Test Google Calendar environment variables
+app.get('/test-calendar-env', (req, res) => {
+  const hasServiceAccountKey = !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  const hasCalendarId = !!process.env.GOOGLE_CALENDAR_ID;
+  const serviceAccountKeyLength = process.env.GOOGLE_SERVICE_ACCOUNT_KEY ? process.env.GOOGLE_SERVICE_ACCOUNT_KEY.length : 0;
+  
+  res.json({
+    hasServiceAccountKey,
+    hasCalendarId,
+    serviceAccountKeyLength,
+    calendarId: process.env.GOOGLE_CALENDAR_ID || 'not set'
+  });
+});
+
 // Catch-all for API routes
 app.get('*', (req, res) => {
-  console.log(`404 - Route not found: ${req.path}`);
-  res.status(404).json({ error: 'API endpoint not found', path: req.path });
+  res.status(404).json({ error: 'API endpoint not found' });
 });
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 }); 
