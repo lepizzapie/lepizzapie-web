@@ -15,28 +15,14 @@ try {
 
 require('dotenv').config();
 
-// Clean the environment variables to handle newlines and special characters
-let SERVICE_ACCOUNT_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+// Get environment variables
+const SERVICE_ACCOUNT_KEY_RAW = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
 
-// Clean the service account key if it exists
-if (SERVICE_ACCOUNT_KEY) {
-  // Remove any leading/trailing whitespace and quotes
-  SERVICE_ACCOUNT_KEY = SERVICE_ACCOUNT_KEY.trim();
-  if (SERVICE_ACCOUNT_KEY.startsWith('"') && SERVICE_ACCOUNT_KEY.endsWith('"')) {
-    SERVICE_ACCOUNT_KEY = SERVICE_ACCOUNT_KEY.slice(1, -1);
-  }
-  if (SERVICE_ACCOUNT_KEY.startsWith("'") && SERVICE_ACCOUNT_KEY.endsWith("'")) {
-    SERVICE_ACCOUNT_KEY = SERVICE_ACCOUNT_KEY.slice(1, -1);
-  }
-  // Replace escaped newlines with actual newlines
-  SERVICE_ACCOUNT_KEY = SERVICE_ACCOUNT_KEY.replace(/\\n/g, '\n');
-}
-
 console.log('🔍 Google Calendar Service Debug Info:');
-console.log('  - SERVICE_ACCOUNT_KEY exists:', !!SERVICE_ACCOUNT_KEY);
+console.log('  - SERVICE_ACCOUNT_KEY exists:', !!SERVICE_ACCOUNT_KEY_RAW);
 console.log('  - CALENDAR_ID exists:', !!CALENDAR_ID);
-console.log('  - SERVICE_ACCOUNT_KEY length:', SERVICE_ACCOUNT_KEY ? SERVICE_ACCOUNT_KEY.length : 0);
+console.log('  - SERVICE_ACCOUNT_KEY length:', SERVICE_ACCOUNT_KEY_RAW ? SERVICE_ACCOUNT_KEY_RAW.length : 0);
 
 // Initialize Google Calendar service
 function initializeCalendarService() {
@@ -47,7 +33,7 @@ function initializeCalendarService() {
     return false;
   }
 
-  if (!SERVICE_ACCOUNT_KEY) {
+  if (!SERVICE_ACCOUNT_KEY_RAW) {
     console.warn('❌ GOOGLE_SERVICE_ACCOUNT_KEY environment variable not set. Calendar sync will be disabled.');
     return false;
   }
@@ -59,8 +45,23 @@ function initializeCalendarService() {
 
   try {
     console.log('📝 Parsing service account key...');
-    // Parse the service account key from environment variable
-    const key = JSON.parse(SERVICE_ACCOUNT_KEY);
+    
+    // Clean and parse the service account key
+    let cleanedKey = SERVICE_ACCOUNT_KEY_RAW.trim();
+    
+    // Remove quotes if present
+    if (cleanedKey.startsWith('"') && cleanedKey.endsWith('"')) {
+      cleanedKey = cleanedKey.slice(1, -1);
+    }
+    if (cleanedKey.startsWith("'") && cleanedKey.endsWith("'")) {
+      cleanedKey = cleanedKey.slice(1, -1);
+    }
+    
+    // Replace escaped newlines
+    cleanedKey = cleanedKey.replace(/\\n/g, '\n');
+    
+    // Parse the JSON
+    const key = JSON.parse(cleanedKey);
     console.log('✅ Service account key parsed successfully');
     console.log('   - Client email:', key.client_email);
     console.log('   - Has private key:', !!key.private_key);
