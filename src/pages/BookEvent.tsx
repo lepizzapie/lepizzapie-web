@@ -18,6 +18,7 @@ interface BookingForm {
 
 const BookEvent: React.FC = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const API_BASE_URL = process.env.REACT_APP_API_URL || '';
   
   const {
     register,
@@ -62,14 +63,23 @@ const BookEvent: React.FC = () => {
     '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'
   ];
 
-  const onSubmit = (data: BookingForm) => {
-    console.log('Booking submitted:', data);
-    setIsSubmitted(true);
-    // In real app, send to API
-    setTimeout(() => {
-      reset();
-      setIsSubmitted(false);
-    }, 5000);
+  const onSubmit = async (data: BookingForm) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (response.ok) {
+        setIsSubmitted(true);
+        reset();
+        setTimeout(() => setIsSubmitted(false), 5000);
+      } else {
+        alert('Failed to submit booking. Please try again.');
+      }
+    } catch (error) {
+      alert('Error submitting booking. Please try again.');
+    }
   };
 
   if (isSubmitted) {

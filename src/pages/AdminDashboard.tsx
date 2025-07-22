@@ -21,6 +21,7 @@ interface Event {
 }
 
 const AdminDashboard: React.FC = () => {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || '';
   const navigate = useNavigate();
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -115,7 +116,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleCreateEvent = async () => {
     try {
-      const response = await fetch('/api/events', {
+      const response = await fetch(`${API_BASE_URL}/api/events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newEvent),
@@ -126,7 +127,7 @@ const AdminDashboard: React.FC = () => {
           title: '', date: '', time: '', contactName: '', contactPhone: '', contactEmail: '', guestCount: 25, eventLocation: '', status: 'pending', specialRequests: '', pizzaPreferences: []
         });
         // Refresh events
-        const eventsRes = await fetch('/api/events');
+        const eventsRes = await fetch(`${API_BASE_URL}/api/events`);
         const data = await eventsRes.json();
         const mapped = data.map((event: any) => ({ ...event, id: event._id }));
         setEvents(mapped);
@@ -142,7 +143,7 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await fetch('/api/events');
+        const response = await fetch(`${API_BASE_URL}/api/events`);
         const data = await response.json();
         // Map MongoDB _id to id for frontend use
         const mapped = data.map((event: any) => ({ ...event, id: event._id }));
@@ -170,7 +171,7 @@ const AdminDashboard: React.FC = () => {
       if (newStatus === 'confirmed') {
         setSyncStatus('Syncing event to Google Calendar...');
         // Call backend to confirm and sync event
-        const response = await fetch('/api/events/confirm', {
+        const response = await fetch(`${API_BASE_URL}/api/events/confirm`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ eventId }),
@@ -265,7 +266,7 @@ const AdminDashboard: React.FC = () => {
     setIsSyncing(true);
     setSyncStatus('Syncing events to Google Calendar...');
     try {
-      const response = await fetch('/api/events/sync-all', {
+      const response = await fetch(`${API_BASE_URL}/api/events/sync-all`, {
         method: 'POST',
       });
       const data = await response.json();
