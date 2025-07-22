@@ -7,8 +7,9 @@ let google;
 try {
   const { google: googleApi } = require('googleapis');
   google = googleApi;
+  console.log('✅ Google APIs loaded successfully');
 } catch (error) {
-  console.warn('Google APIs not available. Calendar sync will be disabled.');
+  console.warn('❌ Google APIs not available. Calendar sync will be disabled.');
   google = null;
 }
 
@@ -17,40 +18,57 @@ require('dotenv').config();
 const SERVICE_ACCOUNT_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
 
+console.log('🔍 Google Calendar Service Debug Info:');
+console.log('  - SERVICE_ACCOUNT_KEY exists:', !!SERVICE_ACCOUNT_KEY);
+console.log('  - CALENDAR_ID exists:', !!CALENDAR_ID);
+console.log('  - SERVICE_ACCOUNT_KEY length:', SERVICE_ACCOUNT_KEY ? SERVICE_ACCOUNT_KEY.length : 0);
+
 // Initialize Google Calendar service
 function initializeCalendarService() {
+  console.log('🚀 Initializing Google Calendar service...');
+  
   if (!google) {
-    console.warn('Google APIs not available. Calendar sync will be disabled.');
+    console.warn('❌ Google APIs not available. Calendar sync will be disabled.');
     return false;
   }
 
   if (!SERVICE_ACCOUNT_KEY) {
-    console.warn('GOOGLE_SERVICE_ACCOUNT_KEY environment variable not set. Calendar sync will be disabled.');
+    console.warn('❌ GOOGLE_SERVICE_ACCOUNT_KEY environment variable not set. Calendar sync will be disabled.');
     return false;
   }
 
   if (!CALENDAR_ID) {
-    console.warn('GOOGLE_CALENDAR_ID environment variable not set. Calendar sync will be disabled.');
+    console.warn('❌ GOOGLE_CALENDAR_ID environment variable not set. Calendar sync will be disabled.');
     return false;
   }
 
   try {
+    console.log('📝 Parsing service account key...');
     // Parse the service account key from environment variable
     const key = JSON.parse(SERVICE_ACCOUNT_KEY);
+    console.log('✅ Service account key parsed successfully');
+    console.log('   - Client email:', key.client_email);
+    console.log('   - Has private key:', !!key.private_key);
     
+    console.log('🔐 Creating JWT auth...');
     auth = new google.auth.JWT(
       key.client_email,
       null,
       key.private_key,
       ['https://www.googleapis.com/auth/calendar']
     );
+    console.log('✅ JWT auth created successfully');
     
+    console.log('📅 Creating calendar service...');
     calendar = google.calendar({ version: 'v3', auth });
+    console.log('✅ Calendar service created successfully');
+    
     isInitialized = true;
-    console.log('Google Calendar service initialized successfully.');
+    console.log('🎉 Google Calendar service initialized successfully.');
     return true;
   } catch (error) {
-    console.warn('Failed to initialize Google Calendar service:', error.message);
+    console.error('❌ Failed to initialize Google Calendar service:', error.message);
+    console.error('   Error stack:', error.stack);
     console.warn('Calendar sync will be disabled.');
     isInitialized = false;
     return false;
@@ -58,6 +76,7 @@ function initializeCalendarService() {
 }
 
 // Initialize on module load
+console.log('🔄 Calling initializeCalendarService...');
 initializeCalendarService();
 
 async function createEvent(event) {
