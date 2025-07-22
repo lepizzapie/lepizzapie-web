@@ -1,10 +1,14 @@
 // Google Calendar Service Account Integration (Node.js backend)
 const { google } = require('googleapis');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 let calendar = null;
 let isInitialized = false;
 let calendarId = process.env.GOOGLE_CALENDAR_ID;
 let jwtClient = null;
+let tempKeyFile = null;
 
 function initializeCalendarService() {
   try {
@@ -26,15 +30,20 @@ function initializeCalendarService() {
     console.log('Initializing Google Calendar service...');
     console.log('Calendar ID:', calendarIdEnv);
     
+    // Create temporary file for service account key
     const keyObj = typeof key === 'string' ? JSON.parse(key) : key;
     console.log('Service account email:', keyObj.client_email);
     
-    jwtClient = new google.auth.JWT(
-      keyObj.client_email,
-      null,
-      keyObj.private_key,
-      ['https://www.googleapis.com/auth/calendar']
-    );
+    // Create temporary file
+    tempKeyFile = path.join(os.tmpdir(), `service-account-${Date.now()}.json`);
+    fs.writeFileSync(tempKeyFile, JSON.stringify(keyObj, null, 2));
+    console.log('Created temporary key file:', tempKeyFile);
+    
+    // Use the temporary file for authentication
+    jwtClient = new google.auth.GoogleAuth({
+      keyFile: tempKeyFile,
+      scopes: ['https://www.googleapis.com/auth/calendar']
+    });
     
     calendar = google.calendar({ version: 'v3', auth: jwtClient });
     calendarId = calendarIdEnv;
@@ -48,6 +57,18 @@ function initializeCalendarService() {
     return false;
   }
 }
+
+// Clean up temporary file on process exit
+process.on('exit', () => {
+  if (tempKeyFile && fs.existsSync(tempKeyFile)) {
+    try {
+      fs.unlinkSync(tempKeyFile);
+      console.log('Cleaned up temporary key file');
+    } catch (err) {
+      console.error('Failed to clean up temporary key file:', err);
+    }
+  }
+});
 
 // Initialize on module load
 initializeCalendarService();
