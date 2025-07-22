@@ -12,11 +12,9 @@ try {
   google = null;
 }
 
-const path = require('path');
-const fs = require('fs');
 require('dotenv').config();
 
-const SERVICE_ACCOUNT_KEY_PATH = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || 'lepizzapieweb-0bbb5492aa73.json';
+const SERVICE_ACCOUNT_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
 
 // Initialize Google Calendar service
@@ -26,16 +24,19 @@ function initializeCalendarService() {
     return false;
   }
 
+  if (!SERVICE_ACCOUNT_KEY) {
+    console.warn('GOOGLE_SERVICE_ACCOUNT_KEY environment variable not set. Calendar sync will be disabled.');
+    return false;
+  }
+
+  if (!CALENDAR_ID) {
+    console.warn('GOOGLE_CALENDAR_ID environment variable not set. Calendar sync will be disabled.');
+    return false;
+  }
+
   try {
-    const keyFilePath = path.join(__dirname, SERVICE_ACCOUNT_KEY_PATH);
-    
-    // Check if the service account key file exists
-    if (!fs.existsSync(keyFilePath)) {
-      console.warn('Google Calendar service account key file not found. Calendar sync will be disabled.');
-      return false;
-    }
-    
-    const credentials = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
+    // Parse the service account key from environment variable
+    const credentials = JSON.parse(SERVICE_ACCOUNT_KEY);
     const SCOPES = ['https://www.googleapis.com/auth/calendar'];
     
     auth = new google.auth.GoogleAuth({

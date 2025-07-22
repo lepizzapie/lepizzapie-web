@@ -5,7 +5,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 
 const router = express.Router();
 
-// MongoDB connection
+// MongoDB connection settings
 const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db';
 const dbName = 'lepizzapie-db';
 const collectionName = 'adminUsers';
@@ -15,16 +15,20 @@ const JWT_SECRET = process.env.JWT_SECRET || 'lepizzapie-admin-secret-key-2025';
 
 // Helper: get admin user
 async function getAdminUser() {
+  let client;
   try {
-    const client = new MongoClient(uri);
+    client = new MongoClient(uri);
     await client.connect();
     const db = client.db(dbName);
     const user = await db.collection(collectionName).findOne({ username: 'admin' });
-    await client.close();
     return user;
   } catch (error) {
     console.error('MongoDB connection error:', error);
     throw new Error('Database connection failed');
+  } finally {
+    if (client) {
+      await client.close();
+    }
   }
 }
 
@@ -54,13 +58,19 @@ router.post('/change-password', async (req, res) => {
     if (!isMatch) return res.status(401).json({ error: 'Old password incorrect' });
     const newHash = await bcrypt.hash(newPassword, 10);
     
-    const client = new MongoClient(uri);
-    await client.connect();
-    await client.db(dbName).collection(collectionName).updateOne(
-      { _id: user._id },
-      { $set: { passwordHash: newHash } }
-    );
-    await client.close();
+    let client;
+    try {
+      client = new MongoClient(uri);
+      await client.connect();
+      await client.db(dbName).collection(collectionName).updateOne(
+        { _id: user._id },
+        { $set: { passwordHash: newHash } }
+      );
+    } finally {
+      if (client) {
+        await client.close();
+      }
+    }
     res.json({ message: 'Password changed successfully' });
   } catch (err) {
     console.error('Change password error:', err);
