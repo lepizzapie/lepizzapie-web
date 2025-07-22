@@ -292,90 +292,91 @@ const BookEvent: React.FC = () => {
                 Event Details
               </h3>
               
-              <div className="grid md:grid-cols-4 gap-6">
-                {/* Calendar Date Picker */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Event Date *
-                  </label>
-                  
-                  {loadingDates ? (
-                    <div className="w-full h-64 bg-gray-100 rounded-md flex items-center justify-center">
-                      <div className="text-gray-500">Loading available dates...</div>
+              {/* Calendar Date Picker */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Event Date *
+                </label>
+                
+                {loadingDates ? (
+                  <div className="w-full h-64 bg-gray-100 rounded-md flex items-center justify-center">
+                    <div className="text-gray-500">Loading available dates...</div>
+                  </div>
+                ) : (
+                  <div className="border border-gray-300 rounded-md p-4">
+                    {/* Calendar Navigation */}
+                    <div className="flex items-center justify-between mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+                        className="p-2 text-gray-600 hover:text-pizza-red transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <h4 className="text-lg font-semibold">
+                        {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+                        className="p-2 text-gray-600 hover:text-pizza-red transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
                     </div>
-                  ) : (
-                    <div className="border border-gray-300 rounded-md p-4">
-                      {/* Calendar Navigation */}
-                      <div className="flex items-center justify-between mb-4">
-                        <button
-                          type="button"
-                          onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-                          className="p-2 text-gray-600 hover:text-pizza-red transition-colors"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <h4 className="text-lg font-semibold">
-                          {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-                          className="p-2 text-gray-600 hover:text-pizza-red transition-colors"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
 
-                      {/* Calendar Grid */}
-                      <div className="grid grid-cols-7 gap-1 mb-4">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                          <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-600 bg-gray-100">
-                            {day}
-                          </div>
-                        ))}
-                        {renderCalendar()}
-                      </div>
+                    {/* Calendar Grid */}
+                    <div className="grid grid-cols-7 gap-1 mb-4">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                        <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-600 bg-gray-100">
+                          {day}
+                        </div>
+                      ))}
+                      {renderCalendar()}
+                    </div>
 
-                      {/* Calendar Legend */}
-                      <div className="flex flex-wrap gap-4 text-xs">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-3 h-3 bg-pizza-red rounded"></div>
-                          <span>Selected</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-3 h-3 bg-gray-100 border border-gray-300 rounded"></div>
-                          <span>Available</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-3 h-3 bg-gray-100 rounded"></div>
-                          <span>Unavailable</span>
-                        </div>
+                    {/* Calendar Legend */}
+                    <div className="flex flex-wrap gap-4 text-xs">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-pizza-red rounded"></div>
+                        <span>Selected</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-gray-100 border border-gray-300 rounded"></div>
+                        <span>Available</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-gray-100 rounded"></div>
+                        <span>Unavailable</span>
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Hidden input for form validation */}
-                  <input
-                    type="hidden"
-                    {...register('eventDate', { required: 'Event date is required' })}
-                  />
-                  
-                  {errors.eventDate && (
-                    <p className="text-red-500 text-sm mt-1">{errors.eventDate.message}</p>
-                  )}
-                  
-                  {selectedDate && (
-                    <p className="text-sm text-green-600 mt-2">
-                      Selected: {new Date(selectedDate).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  )}
-                </div>
+                {/* Hidden input for form validation */}
+                <input
+                  type="hidden"
+                  {...register('eventDate', { required: 'Event date is required' })}
+                />
+                
+                {errors.eventDate && (
+                  <p className="text-red-500 text-sm mt-1">{errors.eventDate.message}</p>
+                )}
+                
+                {selectedDate && (
+                  <p className="text-sm text-green-600 mt-2">
+                    Selected: {new Date(selectedDate).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                )}
+              </div>
 
+              {/* Event Time, Event Type, and Number of Guests */}
+              <div className="grid md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Event Time *
