@@ -1,5 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const { MongoClient, ObjectId } = require('mongodb');
+
+// MongoDB connection settings
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db';
+const dbName = 'lepizzapie-db';
+const collectionName = 'events';
 
 // GET /api/events/availability
 router.get('/availability', async (req, res) => {
@@ -8,7 +14,6 @@ router.get('/availability', async (req, res) => {
     const now = new Date();
     const sixMonthsLater = new Date();
     sixMonthsLater.setMonth(now.getMonth() + 6);
-    // Format as RFC3339 for Google Calendar API
     const timeMin = now.toISOString();
     const timeMax = sixMonthsLater.toISOString();
     const events = await calendarService.listEvents(timeMin, timeMax);
@@ -16,18 +21,20 @@ router.get('/availability', async (req, res) => {
     const unavailableSet = new Set();
     events.forEach(event => {
       if (event.status !== 'cancelled') {
-        // All-day or timed event
-        const startDate = event.start.date || event.start.dateTime;
-        const endDate = event.end.date || event.end.dateTime;
-        let current = new Date(startDate);
-        let end = new Date(endDate);
-        // If end is exclusive (all-day), subtract one day
-        if (event.start.date && event.end.date) {
-          end.setDate(end.getDate() - 1);
-        }
-        while (current <= end) {
-          unavailableSet.add(current.toISOString().split('T')[0]);
-          current.setDate(current.getDate() + 1);
+        const summary = (event.summary || '').trim().toLowerCase();
+        // Block if summary is 'unavailable' or if it's a real booking (not 'unavailable')
+        if (summary === 'unavailable' || summary.startsWith('pizza event')) {
+          const startDate = event.start.date || event.start.dateTime;
+          const endDate = event.end.date || event.end.dateTime;
+          let current = new Date(startDate);
+          let end = new Date(endDate);
+          if (event.start.date && event.end.date) {
+            end.setDate(end.getDate() - 1);
+          }
+          while (current <= end) {
+            unavailableSet.add(current.toISOString().split('T')[0]);
+            current.setDate(current.getDate() + 1);
+          }
         }
       }
     });
@@ -50,55 +57,85 @@ router.get('/availability', async (req, res) => {
 });
 
 // GET /api/events
-router.get('/', (req, res) => {
-  res.json({ message: 'Events API is working!' });
+router.get('/', async (req, res) => {
+  let client;
+  try {
+    client = new MongoClient(uri);
+    await client.connect();
+    const db = client.db(dbName);
+    const events = await db.collection(collectionName).find({}).toArray();
+    res.json(events);
+  } catch (err) {
+    console.error('Error fetching events:', err);
+    res.status(500).json({ error: 'Failed to fetch events' });
+  } finally {
+    if (client) await client.close();
+  }
 });
 
 // POST /api/events
 router.post('/', async (req, res) => {
+  let client;
   try {
     const eventData = req.body;
     console.log('Received event data:', eventData);
-    
+    // Save to MongoDB
+    client = new MongoClient(uri);
+    await client.connect();
+    const db = client.db(dbName);
+    const eventDoc = {
+      title: eventData.title || `Pizza Event - ${eventData.name || 'Event'}`,
+      date: eventData.date,
+      time: eventData.time,
+      eventType: eventData.eventType,
+      guestCount: eventData.guestCount,
+      eventLocation: eventData.eventLocation,
+      contactName: eventData.contactName || eventData.name,
+      contactPhone: eventData.contactPhone,
+      contactEmail: eventData.contactEmail || eventData.email,
+      specialRequests: eventData.specialRequests,
+      pizzaVarieties: eventData.pizzaVarieties,
+      additionalOptions: eventData.additionalOptions,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    const insertResult = await db.collection(collectionName).insertOne(eventDoc);
     // Try to create Google Calendar event
     let calendarEvent = null;
     try {
-      // Dynamically import calendar service to avoid loading issues
       const calendarService = require('../googleCalendarService');
-      
       const googleEvent = {
-        summary: `Pizza Event - ${eventData.name || 'Event'}`,
-        description: `Contact: ${eventData.email || 'No email provided'}\nGuests: ${eventData.guests || 'Not specified'}\nSpecial Requests: ${eventData.specialRequests || 'None'}`,
+        summary: eventDoc.title,
+        description: `Contact: ${eventDoc.contactEmail || 'No email provided'}\nGuests: ${eventDoc.guestCount || 'Not specified'}\nSpecial Requests: ${eventDoc.specialRequests || 'None'}`,
         start: {
-          dateTime: new Date(`${eventData.date}T${eventData.time || '18:00'}:00`).toISOString(),
+          dateTime: new Date(`${eventDoc.date}T${eventDoc.time || '18:00'}:00`).toISOString(),
           timeZone: 'America/Los_Angeles',
         },
         end: {
-          dateTime: new Date(new Date(`${eventData.date}T${eventData.time || '18:00'}:00`).getTime() + 3 * 60 * 60 * 1000).toISOString(),
+          dateTime: new Date(new Date(`${eventDoc.date}T${eventDoc.time || '18:00'}:00`).getTime() + 3 * 60 * 60 * 1000).toISOString(),
           timeZone: 'America/Los_Angeles',
         },
-        location: eventData.eventLocation || 'Mobile Pizza Service',
+        location: eventDoc.eventLocation || 'Mobile Pizza Service',
         attendees: [
-          { email: eventData.email, displayName: eventData.name }
+          { email: eventDoc.contactEmail, displayName: eventDoc.contactName }
         ],
       };
-      
       calendarEvent = await calendarService.createEvent(googleEvent);
       console.log('Event created in Google Calendar:', calendarEvent.id);
     } catch (calendarError) {
       console.warn('Failed to create Google Calendar event:', calendarError.message);
       // Continue without calendar sync
     }
-    
-    res.json({ 
-      message: 'Event received successfully!', 
-      event: eventData,
-      id: 'event-id-' + Date.now(),
+    res.json({
+      message: 'Event received successfully!',
+      event: { ...eventDoc, _id: insertResult.insertedId },
       calendarEvent: calendarEvent ? { id: calendarEvent.id, synced: true } : { synced: false }
     });
   } catch (err) {
     console.error('Error creating event:', err);
     res.status(500).json({ error: 'Server error', details: err.message });
+  } finally {
+    if (client) await client.close();
   }
 });
 
