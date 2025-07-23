@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addDays, addMonths } from 'date-fns';
 
@@ -8,6 +9,7 @@ interface AvailableDate {
 }
 
 const Calendar: React.FC = () => {
+  const navigate = useNavigate();
   const API_BASE_URL = process.env.REACT_APP_API_URL || '';
   const [currentDate, setCurrentDate] = useState(new Date());
   const [availableDates, setAvailableDates] = useState<AvailableDate[]>([]);
@@ -124,13 +126,15 @@ const Calendar: React.FC = () => {
             {/* Calendar Days */}
             {daysInMonth.map((day, index) => {
               const status = getDateStatus(day);
+              const isAvailable = status === 'available';
               
               return (
                 <div
                   key={index}
                   className={`min-h-[100px] p-2 border border-gray-200 rounded ${
                     isToday(day) ? 'ring-2 ring-pizza-red' : ''
-                  }`}
+                  } ${isAvailable ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''}`}
+                  onClick={isAvailable ? () => navigate('/book-event', { state: { selectedDate: format(day, 'yyyy-MM-dd') } }) : undefined}
                 >
                   <div className="text-sm font-medium text-gray-900 mb-1">
                     {format(day, 'd')}
@@ -157,12 +161,12 @@ const Calendar: React.FC = () => {
             <p className="text-gray-600 mb-4">
               Ready to book your pizza event? Click the button below to get started!
             </p>
-            <a
-              href="/book-event"
+            <button
+              onClick={() => navigate('/book-event')}
               className="btn-primary inline-block"
             >
               Book Now
-            </a>
+            </button>
           </div>
         </div>
       </div>

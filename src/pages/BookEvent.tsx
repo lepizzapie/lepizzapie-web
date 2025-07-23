@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useLocation } from 'react-router-dom';
 import { Calendar, MapPin, Phone, Mail, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface BookingForm {
@@ -23,6 +24,7 @@ interface AvailableDate {
 }
 
 const BookEvent: React.FC = () => {
+  const location = useLocation();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const API_BASE_URL = process.env.REACT_APP_API_URL || '';
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -71,6 +73,19 @@ const BookEvent: React.FC = () => {
     '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM',
     '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'
   ];
+
+  // Handle selected date from calendar navigation
+  useEffect(() => {
+    if (location.state?.selectedDate) {
+      const dateFromCalendar = location.state.selectedDate;
+      setSelectedDate(dateFromCalendar);
+      setValue('eventDate', dateFromCalendar);
+      
+      // Set current month to the selected date's month
+      const selectedDateObj = new Date(dateFromCalendar);
+      setCurrentMonth(selectedDateObj);
+    }
+  }, [location.state, setValue]);
 
   // Fetch available dates from backend
   useEffect(() => {
