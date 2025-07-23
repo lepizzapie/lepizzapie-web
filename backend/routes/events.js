@@ -105,6 +105,90 @@ router.get('/availability', async (req, res) => {
   }
 });
 
+// GET /api/events/debug-mongo - Debug MongoDB connection
+router.get('/debug-mongo', async (req, res) => {
+  let client;
+  try {
+    console.log('🔍 DEBUG: Testing MongoDB connection...');
+    console.log('🔍 DEBUG: URI:', uri.substring(0, 50) + '...');
+    console.log('🔍 DEBUG: Options:', JSON.stringify(mongoOptions, null, 2));
+    
+    client = new MongoClient(uri, mongoOptions);
+    
+    console.log('🔍 DEBUG: Created MongoClient');
+    
+    // Add connection timeout and retry logic
+    const connectPromise = client.connect();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Connection timeout')), 15000)
+    );
+    
+    await Promise.race([connectPromise, timeoutPromise]);
+    console.log('🔍 DEBUG: MongoDB connected successfully');
+    
+    const db = client.db(dbName);
+    console.log('🔍 DEBUG: Got database:', dbName);
+    
+    // Test the connection with a ping
+    await db.admin().ping();
+    console.log('🔍 DEBUG: MongoDB ping successful');
+    
+    // Try to insert a test document
+    const testDoc = {
+      test: true,
+      timestamp: new Date().toISOString(),
+      message: 'Test document for debugging'
+    };
+    
+    const result = await db.collection(collectionName).insertOne(testDoc);
+    console.log('🔍 DEBUG: Test document inserted:', result.insertedId);
+    
+    // Try to find the test document
+    const found = await db.collection(collectionName).findOne({ _id: result.insertedId });
+    console.log('🔍 DEBUG: Test document found:', found ? 'YES' : 'NO');
+    
+    // Clean up test document
+    await db.collection(collectionName).deleteOne({ _id: result.insertedId });
+    console.log('🔍 DEBUG: Test document cleaned up');
+    
+    res.json({
+      success: true,
+      message: 'MongoDB connection test successful',
+      testInserted: result.insertedId,
+      testFound: !!found,
+      testCleaned: true
+    });
+    
+  } catch (err) {
+    console.error('🔍 DEBUG: MongoDB test failed:', err);
+    console.error('🔍 DEBUG: Error details:', {
+      name: err.name,
+      code: err.code,
+      message: err.message,
+      stack: err.stack
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: err.message,
+      details: {
+        name: err.name,
+        code: err.code,
+        message: err.message
+      }
+    });
+  } finally {
+    if (client) {
+      try {
+        await client.close();
+        console.log('🔍 DEBUG: MongoDB connection closed');
+      } catch (closeError) {
+        console.warn('🔍 DEBUG: Error closing MongoDB connection:', closeError.message);
+      }
+    }
+  }
+});
+
 // GET /api/events
 router.get('/', async (req, res) => {
   let client;
