@@ -83,6 +83,8 @@ app.get('/test-calendar-service', async (req, res) => {
     let isInitialized = false;
     let serviceError = null;
     try {
+      // Clear module cache to force fresh load
+      delete require.cache[require.resolve('./googleCalendarService')];
       calendarService = require('./googleCalendarService');
       isInitialized = calendarService.isInitialized();
     } catch (e) {
