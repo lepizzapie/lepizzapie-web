@@ -1,12 +1,10 @@
 // Google Calendar Service Account Integration (Node.js backend)
-// Last updated: 2025-07-22 19:15 UTC - Testing deployment with mock first
-// Using direct HTTP requests to bypass googleapis library issues
+// Last updated: 2025-07-22 19:30 UTC - Clean mock implementation
 const https = require('https');
 const crypto = require('crypto');
 
 let isInitialized = false;
 let calendarId = process.env.GOOGLE_CALENDAR_ID;
-let accessToken = null;
 let serviceAccountKey = null;
 
 console.log('🔄 Loading Google Calendar service...');
@@ -60,24 +58,24 @@ function initializeCalendarService() {
 // Initialize on module load
 initializeCalendarService();
 
-// TEMPORARY: Mock implementation to test deployment
+// Mock implementation for testing
 async function createEvent(event) {
-  console.log('🎯 Mock createEvent called');
+  console.log('🎯 Mock createEvent called with:', event.summary);
   return { id: 'mock-event-id', summary: event.summary };
 }
 
 async function updateEvent(eventId, event) {
-  console.log('🎯 Mock updateEvent called');
+  console.log('🎯 Mock updateEvent called for:', eventId);
   return { id: eventId, summary: event.summary };
 }
 
 async function deleteEvent(eventId) {
-  console.log('🎯 Mock deleteEvent called');
+  console.log('🎯 Mock deleteEvent called for:', eventId);
   return true;
 }
 
 async function listEvents(timeMin, timeMax) {
-  console.log('🎯 Mock listEvents called');
+  console.log('🎯 Mock listEvents called from', timeMin, 'to', timeMax);
   return [];
 }
 
