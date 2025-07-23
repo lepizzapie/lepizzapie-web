@@ -10,6 +10,17 @@ const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db'
 const dbName = 'lepizzapie-db';
 const collectionName = 'adminUsers';
 
+// MongoDB connection options to handle SSL/TLS issues
+const mongoOptions = {
+  ssl: true,
+  sslValidate: false,
+  tls: true,
+  tlsAllowInvalidCertificates: true,
+  tlsAllowInvalidHostnames: true,
+  retryWrites: true,
+  w: 'majority'
+};
+
 // JWT secret
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -21,7 +32,7 @@ if (!JWT_SECRET) {
 async function getAdminUser() {
   let client;
   try {
-    client = new MongoClient(uri);
+    client = new MongoClient(uri, mongoOptions);
     await client.connect();
     const db = client.db(dbName);
     const user = await db.collection(collectionName).findOne({ username: 'admin' });
@@ -64,7 +75,7 @@ router.post('/change-password', async (req, res) => {
     
     let client;
     try {
-      client = new MongoClient(uri);
+      client = new MongoClient(uri, mongoOptions);
       await client.connect();
       await client.db(dbName).collection(collectionName).updateOne(
         { _id: user._id },

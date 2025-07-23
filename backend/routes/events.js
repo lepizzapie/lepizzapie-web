@@ -7,6 +7,17 @@ const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db'
 const dbName = 'lepizzapie-db';
 const collectionName = 'events';
 
+// MongoDB connection options to handle SSL/TLS issues
+const mongoOptions = {
+  ssl: true,
+  sslValidate: false,
+  tls: true,
+  tlsAllowInvalidCertificates: true,
+  tlsAllowInvalidHostnames: true,
+  retryWrites: true,
+  w: 'majority'
+};
+
 // GET /api/events/availability
 router.get('/availability', async (req, res) => {
   try {
@@ -75,7 +86,7 @@ router.get('/availability', async (req, res) => {
 router.get('/', async (req, res) => {
   let client;
   try {
-    client = new MongoClient(uri);
+    client = new MongoClient(uri, mongoOptions);
     await client.connect();
     const db = client.db(dbName);
     const events = await db.collection(collectionName).find({}).toArray();
@@ -95,7 +106,7 @@ router.post('/', async (req, res) => {
     const eventData = req.body;
     console.log('Received event data:', eventData);
     // Save to MongoDB
-    client = new MongoClient(uri);
+    client = new MongoClient(uri, mongoOptions);
     await client.connect();
     const db = client.db(dbName);
     const eventDoc = {
@@ -260,7 +271,7 @@ router.post('/confirm', async (req, res) => {
 router.post('/sync-all', async (req, res) => {
   let client;
   try {
-    client = new MongoClient(uri);
+    client = new MongoClient(uri, mongoOptions);
     await client.connect();
     const db = client.db(dbName);
     
