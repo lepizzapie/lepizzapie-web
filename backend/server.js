@@ -65,15 +65,6 @@ app.get('/test-calendar-env', (req, res) => {
 // Test Google Calendar service status
 app.get('/test-calendar-service', async (req, res) => {
   try {
-    // Test if googleapis is available
-    let hasGoogleApis = false;
-    try {
-      require('googleapis');
-      hasGoogleApis = true;
-    } catch (e) {
-      hasGoogleApis = false;
-    }
-    
     // Test service account key parsing
     let keyParseError = null;
     let parsedKey = null;
@@ -100,7 +91,7 @@ app.get('/test-calendar-service', async (req, res) => {
     
     res.json({
       isInitialized,
-      hasGoogleApis,
+      hasGoogleApis: false, // We're not using googleapis library anymore
       hasServiceAccountKey: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
       hasCalendarId: !!process.env.GOOGLE_CALENDAR_ID,
       serviceAccountKeyLength: process.env.GOOGLE_SERVICE_ACCOUNT_KEY ? process.env.GOOGLE_SERVICE_ACCOUNT_KEY.length : 0,
@@ -108,7 +99,7 @@ app.get('/test-calendar-service', async (req, res) => {
       keyParseError,
       parsedKey: parsedKey ? { client_email: parsedKey.client_email, hasPrivateKey: !!parsedKey.private_key } : null,
       serviceError,
-      note: 'Currently using mock Google Calendar service due to environment variable issues'
+      note: 'Using direct HTTP requests to Google Calendar API'
     });
   } catch (error) {
     res.json({
@@ -117,7 +108,7 @@ app.get('/test-calendar-service', async (req, res) => {
       hasGoogleApis: false,
       hasServiceAccountKey: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
       hasCalendarId: !!process.env.GOOGLE_CALENDAR_ID,
-      note: 'Currently using mock Google Calendar service due to environment variable issues'
+      note: 'Using direct HTTP requests to Google Calendar API'
     });
   }
 });
