@@ -367,25 +367,52 @@ const AdminDashboard: React.FC = () => {
     if (unavailableDates.includes(dateString)) {
       // Mark as available (delete UNAVAILABLE event)
       try {
-        await fetch(`${API_BASE_URL}/api/events/unavailable`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ date: dateString })
-        });
+        // First, try to find the UNAVAILABLE event for this date
+        const response = await fetch(`${API_BASE_URL}/api/events`);
+        if (response.ok) {
+          const events = await response.json();
+          const unavailableEvent = events.find((e: any) => 
+            e.title === 'UNAVAILABLE' && e.date === dateString
+          );
+          
+          if (unavailableEvent) {
+            // Delete using the direct DELETE endpoint
+            const deleteResponse = await fetch(`${API_BASE_URL}/api/events/${unavailableEvent._id}`, {
+              method: 'DELETE',
+            });
+            
+            if (deleteResponse.ok) {
+              console.log('✅ Successfully marked date as available');
+            } else {
+              console.error('❌ Failed to delete UNAVAILABLE event');
+            }
+          } else {
+            console.error('❌ UNAVAILABLE event not found for date:', dateString);
+          }
+        }
         await fetchUnavailableDates();
       } catch (error) {
+        console.error('❌ Error marking date as available:', error);
         alert('Failed to mark date as available.');
       }
     } else {
       // Mark as unavailable (create UNAVAILABLE event)
       try {
-        await fetch(`${API_BASE_URL}/api/events/unavailable`, {
+        const response = await fetch(`${API_BASE_URL}/api/events/unavailable`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ date: dateString })
         });
+        
+        if (response.ok) {
+          console.log('✅ Successfully marked date as unavailable');
+        } else {
+          console.error('❌ Failed to mark date as unavailable');
+        }
+        
         await fetchUnavailableDates();
       } catch (error) {
+        console.error('❌ Error marking date as unavailable:', error);
         alert('Failed to mark date as unavailable.');
       }
     }
