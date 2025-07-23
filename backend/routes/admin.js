@@ -6,7 +6,13 @@ const { MongoClient, ObjectId } = require('mongodb');
 const router = express.Router();
 
 // MongoDB connection settings
-const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db';
+let uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db';
+
+// Add TLS parameters to MongoDB URI if it's an Atlas connection
+if (uri.includes('mongodb.net') && !uri.includes('tls=true')) {
+  uri += '?tls=true&tlsAllowInvalidCertificates=true&tlsAllowInvalidHostnames=true';
+}
+
 const dbName = 'lepizzapie-db';
 const collectionName = 'adminUsers';
 
