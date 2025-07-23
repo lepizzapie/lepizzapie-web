@@ -26,9 +26,7 @@ const mongoOptions = {
   socketTimeoutMS: 45000,
   serverSelectionTimeoutMS: 30000,
   heartbeatFrequencyMS: 10000,
-  retryReads: true,
-  ssl: true,
-  sslValidate: false
+  retryReads: true
 };
 
 // JWT secret
