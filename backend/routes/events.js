@@ -25,7 +25,6 @@ const mongoOptions = {
   tls: true,
   tlsAllowInvalidCertificates: true,
   tlsAllowInvalidHostnames: true,
-  tlsInsecure: true,
   tlsDisableCertificateRevocationCheck: true,
   tlsDisableOCSPEndpointCheck: true,
   maxPoolSize: 5,
@@ -36,7 +35,6 @@ const mongoOptions = {
   serverSelectionTimeoutMS: 15000,
   heartbeatFrequencyMS: 10000,
   retryReads: true,
-  retryWrites: true,
   bufferMaxEntries: 0,
   bufferCommands: false
 };
@@ -351,9 +349,6 @@ router.post('/', async (req, res) => {
           timeZone: 'America/Los_Angeles',
         },
         location: eventDoc.eventLocation || 'Mobile Pizza Service',
-        attendees: [
-          { email: eventDoc.contactEmail, displayName: eventDoc.contactName }
-        ],
       };
       calendarEvent = await calendarService.createEvent(googleEvent);
       console.log('✅ Event created in Google Calendar:', calendarEvent.id);

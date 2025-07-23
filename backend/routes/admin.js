@@ -28,14 +28,18 @@ const mongoOptions = {
   tls: true,
   tlsAllowInvalidCertificates: true,
   tlsAllowInvalidHostnames: true,
-  tlsInsecure: true,
   tlsDisableCertificateRevocationCheck: true,
   tlsDisableOCSPEndpointCheck: true,
-  maxPoolSize: 10,
-  minPoolSize: 0,
+  maxPoolSize: 5,
+  minPoolSize: 1,
   maxIdleTimeMS: 30000,
-  connectTimeoutMS: 10000,
-  socketTimeoutMS: 45000
+  connectTimeoutMS: 15000,
+  socketTimeoutMS: 45000,
+  serverSelectionTimeoutMS: 15000,
+  heartbeatFrequencyMS: 10000,
+  retryReads: true,
+  bufferMaxEntries: 0,
+  bufferCommands: false
 };
 
 // JWT secret
