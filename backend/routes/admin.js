@@ -47,17 +47,33 @@ if (!JWT_SECRET) {
 async function getAdminUser() {
   let client;
   try {
+    console.log('🔗 Attempting MongoDB connection for admin user...');
     client = new MongoClient(uri, mongoOptions);
-    await client.connect();
+    
+    // Add connection timeout
+    const connectPromise = client.connect();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Connection timeout')), 5000)
+    );
+    
+    await Promise.race([connectPromise, timeoutPromise]);
+    console.log('✅ MongoDB connected for admin user');
+    
     const db = client.db(dbName);
     const user = await db.collection(collectionName).findOne({ username: 'admin' });
+    console.log('✅ Admin user query completed');
     return user;
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error('❌ MongoDB connection error for admin user:', error.message);
     throw new Error('Database connection failed');
   } finally {
     if (client) {
-      await client.close();
+      try {
+        await client.close();
+        console.log('🔌 MongoDB connection closed for admin user');
+      } catch (closeError) {
+        console.warn('⚠️ Error closing MongoDB connection:', closeError.message);
+      }
     }
   }
 }
@@ -66,29 +82,39 @@ async function getAdminUser() {
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
   try {
-    // Try MongoDB first
+    console.log('🔐 Admin login attempt for username:', username);
+    
+    // Try MongoDB first (with timeout)
     try {
-      const user = await getAdminUser();
+      const userPromise = getAdminUser();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('MongoDB timeout')), 5000)
+      );
+      
+      const user = await Promise.race([userPromise, timeoutPromise]);
       if (user) {
         const isMatch = await bcrypt.compare(password, user.passwordHash);
         if (isMatch) {
           const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: '2h' });
+          console.log('✅ MongoDB login successful for:', username);
           return res.json({ token });
         }
       }
     } catch (mongoError) {
-      console.log('⚠️ MongoDB login failed, trying fallback:', mongoError.message);
+      console.log('⚠️ MongoDB login failed, using fallback:', mongoError.message);
     }
     
     // Fallback: Check against hardcoded admin credentials
     if (username === 'admin' && password === 'pizza123') {
       const token = jwt.sign({ id: 'admin-fallback', username: 'admin' }, JWT_SECRET, { expiresIn: '2h' });
+      console.log('✅ Fallback login successful for:', username);
       res.json({ token });
     } else {
+      console.log('❌ Login failed for:', username);
       res.status(401).json({ error: 'Invalid credentials' });
     }
   } catch (err) {
-    console.error('Login error:', err);
+    console.error('❌ Login error:', err);
     res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
