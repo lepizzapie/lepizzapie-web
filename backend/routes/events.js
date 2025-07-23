@@ -396,19 +396,42 @@ router.delete('/unavailable', async (req, res) => {
   try {
     const { date } = req.body; // date in 'YYYY-MM-DD' format
     if (!date) return res.status(400).json({ error: 'Date is required' });
+    
+    console.log('🗑️ Attempting to delete UNAVAILABLE event for date:', date);
+    
     const calendarService = require('../googleCalendarService');
     // Find 'UNAVAILABLE' event for this date (case-insensitive)
     const events = await calendarService.listEvents(date, getNextDay(date));
-    const unavailableEvent = events.find(e =>
-      e.summary && typeof e.summary === 'string' &&
-      e.start.date === date &&
-      e.summary.trim().toLowerCase() === 'unavailable'
-    );
-    if (!unavailableEvent) return res.status(404).json({ error: 'No UNAVAILABLE event found for this date' });
+    console.log('📅 Found events for date:', events.length);
+    
+    const unavailableEvent = events.find(e => {
+      const isUnavailable = e.summary && typeof e.summary === 'string' &&
+        e.summary.trim().toLowerCase() === 'unavailable';
+      const isCorrectDate = e.start && e.start.date === date;
+      
+      console.log('🔍 Checking event:', {
+        id: e.id,
+        summary: e.summary,
+        startDate: e.start?.date,
+        isUnavailable,
+        isCorrectDate
+      });
+      
+      return isUnavailable && isCorrectDate;
+    });
+    
+    if (!unavailableEvent) {
+      console.log('❌ No UNAVAILABLE event found for date:', date);
+      return res.status(404).json({ error: 'No UNAVAILABLE event found for this date' });
+    }
+    
+    console.log('✅ Found UNAVAILABLE event to delete:', unavailableEvent.id);
     await calendarService.deleteEvent(unavailableEvent.id);
+    console.log('✅ Successfully deleted UNAVAILABLE event');
+    
     res.json({ success: true });
   } catch (error) {
-    console.error('Failed to delete UNAVAILABLE event:', error);
+    console.error('❌ Failed to delete UNAVAILABLE event:', error);
     res.status(500).json({ error: 'Failed to mark date as available' });
   }
 });
