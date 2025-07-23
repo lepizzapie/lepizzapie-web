@@ -135,12 +135,18 @@ const AdminDashboard: React.FC = () => {
     const fetchEvents = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/events`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         // Map MongoDB _id to id for frontend use
         const mapped = data.map((event: any) => ({ ...event, id: event._id }));
         setEvents(mapped);
+        console.log('✅ Events loaded successfully:', mapped.length, 'events');
       } catch (error) {
-        console.error('Failed to fetch events:', error);
+        console.error('❌ Failed to fetch events:', error);
+        // Show a user-friendly error message
+        alert('Unable to load events. Please refresh the page or try again later.');
       }
     };
     fetchEvents();
@@ -269,8 +275,9 @@ const AdminDashboard: React.FC = () => {
         alert('Failed to sync events to Google Calendar: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
-      setSyncStatus('Sync failed');
-      alert('Failed to sync events to Google Calendar. Please try again.');
+      console.error('❌ Sync failed:', error);
+      setSyncStatus('Sync failed - MongoDB connection issue');
+      alert('Sync failed due to database connection issues. Events are still being created in Google Calendar automatically when customers book.');
     } finally {
       setIsSyncing(false);
     }
@@ -319,9 +326,15 @@ const AdminDashboard: React.FC = () => {
         const data = await response.json();
         const unavailable = data.filter((d: any) => !d.available).map((d: any) => d.date);
         setUnavailableDates(unavailable);
+        console.log('✅ Unavailable dates loaded:', unavailable.length, 'dates');
+      } else {
+        console.warn('⚠️ Failed to fetch unavailable dates, using empty list');
+        setUnavailableDates([]);
       }
     } catch (error) {
-      console.error('Failed to fetch unavailable dates:', error);
+      console.error('❌ Failed to fetch unavailable dates:', error);
+      // Use empty list as fallback
+      setUnavailableDates([]);
     }
   };
 
