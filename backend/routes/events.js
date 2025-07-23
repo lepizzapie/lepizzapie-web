@@ -10,7 +10,12 @@ const collectionName = 'events';
 // MongoDB connection options to handle SSL/TLS issues
 const mongoOptions = {
   retryWrites: true,
-  w: 'majority'
+  w: 'majority',
+  serverApi: {
+    version: '1',
+    strict: true,
+    deprecationErrors: true,
+  }
 };
 
 // GET /api/events/availability
