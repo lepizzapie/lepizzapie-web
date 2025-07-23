@@ -25,8 +25,6 @@ const mongoOptions = {
   tls: true,
   tlsAllowInvalidCertificates: true,
   tlsAllowInvalidHostnames: true,
-  tlsDisableCertificateRevocationCheck: true,
-  tlsDisableOCSPEndpointCheck: true,
   maxPoolSize: 5,
   minPoolSize: 1,
   maxIdleTimeMS: 30000,
@@ -34,9 +32,7 @@ const mongoOptions = {
   socketTimeoutMS: 45000,
   serverSelectionTimeoutMS: 15000,
   heartbeatFrequencyMS: 10000,
-  retryReads: true,
-  bufferMaxEntries: 0,
-  bufferCommands: false
+  retryReads: true
 };
 
 // GET /api/events/availability
