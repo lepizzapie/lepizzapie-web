@@ -16,7 +16,7 @@ if (uri.includes('mongodb.net') && !uri.includes('tls=true')) {
 const dbName = 'lepizzapie-db';
 const collectionName = 'adminUsers';
 
-// MongoDB connection options to handle SSL/TLS issues
+// MongoDB connection options - simplified for Atlas compatibility
 const mongoOptions = {
   retryWrites: true,
   w: 'majority',
@@ -25,9 +25,6 @@ const mongoOptions = {
     strict: true,
     deprecationErrors: true,
   },
-  tls: true,
-  tlsAllowInvalidCertificates: true,
-  tlsAllowInvalidHostnames: true,
   maxPoolSize: 5,
   minPoolSize: 1,
   maxIdleTimeMS: 30000,
