@@ -192,17 +192,19 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const deleteEvent = async (eventId: string) => {
+  const deleteEvent = async (event: any) => {
     if (window.confirm('Are you sure you want to delete this event? This will remove it from both the database and Google Calendar.')) {
-      setDeletingEvent(eventId);
+      setDeletingEvent(event.id);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/events/${event.id}`, {
           method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ _id: event._id, id: event.id })
         });
         
         if (response.ok) {
           const data = await response.json();
-          setEvents(events.filter(event => event.id !== eventId));
+          setEvents(events.filter(e => e.id !== event.id));
           alert(`Event deleted successfully!${data.mongoDeleted ? ' Removed from database.' : ''}${data.calendarDeleted ? ' Removed from Google Calendar.' : ''}`);
         } else {
           const errorData = await response.json();
@@ -786,7 +788,7 @@ const AdminDashboard: React.FC = () => {
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => deleteEvent(event.id)}
+                      onClick={() => deleteEvent(event)}
                       disabled={deletingEvent === event.id}
                       className={`p-2 transition-colors ${
                         deletingEvent === event.id 

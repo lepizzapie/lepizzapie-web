@@ -585,31 +585,36 @@ router.post('/sync-all', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   let client;
   try {
-    const eventId = req.params.id;
-    console.log('🗑️ Deleting event:', eventId);
+    // Accept both _id and id from body or URL param
+    const urlId = req.params.id;
+    const { _id, id } = req.body || {};
+    const mongoId = _id || urlId;
+    const calendarId = id || urlId;
+    console.log('🗑️ Deleting event. MongoDB _id:', mongoId, 'Google Calendar id:', calendarId);
     
     // Try to delete from MongoDB
     let mongoDeleted = false;
     try {
-      console.log('🔗 Attempting MongoDB connection for delete...');
-      client = new MongoClient(uri, mongoOptions);
-      
-      const connectPromise = client.connect();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Connection timeout')), 10000)
-      );
-      
-      await Promise.race([connectPromise, timeoutPromise]);
-      console.log('✅ MongoDB connected successfully for delete');
-      
-      const db = client.db(dbName);
-      await db.admin().ping();
-      console.log('🏓 MongoDB ping successful for delete');
-      
-      const result = await db.collection(collectionName).deleteOne({ _id: eventId });
-      mongoDeleted = result.deletedCount > 0;
-      console.log('✅ Event deleted from MongoDB:', mongoDeleted);
-      
+      if (mongoId && mongoId.length >= 12) {
+        console.log('🔗 Attempting MongoDB connection for delete...');
+        client = new MongoClient(uri, mongoOptions);
+        const connectPromise = client.connect();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Connection timeout')), 10000)
+        );
+        await Promise.race([connectPromise, timeoutPromise]);
+        console.log('✅ MongoDB connected successfully for delete');
+        const db = client.db(dbName);
+        await db.admin().ping();
+        console.log('🏓 MongoDB ping successful for delete');
+        // Try both as ObjectId and string
+        let result = await db.collection(collectionName).deleteOne({ _id: mongoId });
+        if (!result.deletedCount && ObjectId.isValid(mongoId)) {
+          result = await db.collection(collectionName).deleteOne({ _id: new ObjectId(mongoId) });
+        }
+        mongoDeleted = result.deletedCount > 0;
+        console.log('✅ Event deleted from MongoDB:', mongoDeleted);
+      }
     } catch (mongoError) {
       console.error('❌ MongoDB delete failed:', mongoError.message);
     }
@@ -617,10 +622,12 @@ router.delete('/:id', async (req, res) => {
     // Try to delete from Google Calendar
     let calendarDeleted = false;
     try {
-      const calendarService = require('../googleCalendarService');
-      await calendarService.deleteEvent(eventId);
-      calendarDeleted = true;
-      console.log('✅ Event deleted from Google Calendar');
+      if (calendarId) {
+        const calendarService = require('../googleCalendarService');
+        await calendarService.deleteEvent(calendarId);
+        calendarDeleted = true;
+        console.log('✅ Event deleted from Google Calendar');
+      }
     } catch (calendarError) {
       console.warn('⚠️ Failed to delete from Google Calendar:', calendarError.message);
     }
