@@ -28,11 +28,17 @@ const mongoOptions = {
   tlsInsecure: true,
   tlsDisableCertificateRevocationCheck: true,
   tlsDisableOCSPEndpointCheck: true,
-  maxPoolSize: 10,
-  minPoolSize: 0,
+  maxPoolSize: 5,
+  minPoolSize: 1,
   maxIdleTimeMS: 30000,
-  connectTimeoutMS: 10000,
-  socketTimeoutMS: 45000
+  connectTimeoutMS: 15000,
+  socketTimeoutMS: 45000,
+  serverSelectionTimeoutMS: 15000,
+  heartbeatFrequencyMS: 10000,
+  retryReads: true,
+  retryWrites: true,
+  bufferMaxEntries: 0,
+  bufferCommands: false
 };
 
 // GET /api/events/availability
@@ -103,13 +109,35 @@ router.get('/availability', async (req, res) => {
 router.get('/', async (req, res) => {
   let client;
   try {
+    console.log('🔗 Attempting MongoDB connection for GET events...');
     client = new MongoClient(uri, mongoOptions);
-    await client.connect();
+    
+    // Add connection timeout and retry logic
+    const connectPromise = client.connect();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Connection timeout')), 10000)
+    );
+    
+    await Promise.race([connectPromise, timeoutPromise]);
+    console.log('✅ MongoDB connected successfully for GET events');
+    
     const db = client.db(dbName);
+    console.log('📊 Using database:', dbName);
+    
+    // Test the connection with a ping
+    await db.admin().ping();
+    console.log('🏓 MongoDB ping successful for GET events');
+    
     const events = await db.collection(collectionName).find({}).toArray();
+    console.log(`✅ Found ${events.length} events in MongoDB`);
     res.json(events);
   } catch (err) {
-    console.error('Error fetching events from MongoDB:', err);
+    console.error('❌ Error fetching events from MongoDB:', err);
+    console.error('MongoDB error details:', {
+      name: err.name,
+      code: err.code,
+      message: err.message
+    });
     console.log('⚠️  Falling back to Google Calendar events due to MongoDB error');
     
     // Fallback: try to get events from Google Calendar
@@ -138,13 +166,21 @@ router.get('/', async (req, res) => {
         fromGoogleCalendar: true
       }));
       
+      console.log(`✅ Found ${events.length} events from Google Calendar fallback`);
       res.json(events);
     } catch (calendarError) {
-      console.error('Failed to fetch events from Google Calendar:', calendarError);
+      console.error('❌ Failed to fetch events from Google Calendar:', calendarError);
       res.status(500).json({ error: 'Failed to fetch events from both MongoDB and Google Calendar' });
     }
   } finally {
-    if (client) await client.close();
+    if (client) {
+      try {
+        await client.close();
+        console.log('🔌 MongoDB connection closed for GET events');
+      } catch (closeError) {
+        console.warn('⚠️ Error closing MongoDB connection:', closeError.message);
+      }
+    }
   }
 });
 
@@ -172,16 +208,47 @@ router.post('/', async (req, res) => {
       createdAt: new Date().toISOString(),
     };
     
-    // Try to save to MongoDB (with fallback)
+    // Try to save to MongoDB with improved error handling
     let mongoResult = null;
     try {
+      console.log('🔗 Attempting MongoDB connection...');
       client = new MongoClient(uri, mongoOptions);
-      await client.connect();
+      
+      // Add connection timeout and retry logic
+      const connectPromise = client.connect();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout')), 10000)
+      );
+      
+      await Promise.race([connectPromise, timeoutPromise]);
+      console.log('✅ MongoDB connected successfully');
+      
       const db = client.db(dbName);
+      console.log('📊 Using database:', dbName);
+      
+      // Test the connection with a ping
+      await db.admin().ping();
+      console.log('🏓 MongoDB ping successful');
+      
       mongoResult = await db.collection(collectionName).insertOne(eventDoc);
-      console.log('Event saved to MongoDB:', mongoResult.insertedId);
+      console.log('✅ Event saved to MongoDB:', mongoResult.insertedId);
+      
     } catch (mongoError) {
-      console.warn('MongoDB save failed, continuing with Google Calendar sync:', mongoError.message);
+      console.error('❌ MongoDB save failed:', mongoError.message);
+      console.error('MongoDB error details:', {
+        name: mongoError.name,
+        code: mongoError.code,
+        message: mongoError.message
+      });
+      
+      // Try to get more specific error information
+      if (mongoError.name === 'MongoServerSelectionError') {
+        console.error('🔍 Server selection error - connection issues');
+      } else if (mongoError.name === 'MongoNetworkError') {
+        console.error('🌐 Network error - connectivity issues');
+      } else if (mongoError.name === 'MongoTimeoutError') {
+        console.error('⏰ Timeout error - slow connection');
+      }
     }
     
     // Try to create Google Calendar event
@@ -205,9 +272,9 @@ router.post('/', async (req, res) => {
         ],
       };
       calendarEvent = await calendarService.createEvent(googleEvent);
-      console.log('Event created in Google Calendar:', calendarEvent.id);
+      console.log('✅ Event created in Google Calendar:', calendarEvent.id);
     } catch (calendarError) {
-      console.warn('Failed to create Google Calendar event:', calendarError.message);
+      console.warn('⚠️ Failed to create Google Calendar event:', calendarError.message);
       // Continue without calendar sync
     }
     
@@ -218,10 +285,17 @@ router.post('/', async (req, res) => {
       mongoSaved: !!mongoResult
     });
   } catch (err) {
-    console.error('Error creating event:', err);
+    console.error('❌ Error creating event:', err);
     res.status(500).json({ error: 'Server error', details: err.message });
   } finally {
-    if (client) await client.close();
+    if (client) {
+      try {
+        await client.close();
+        console.log('🔌 MongoDB connection closed');
+      } catch (closeError) {
+        console.warn('⚠️ Error closing MongoDB connection:', closeError.message);
+      }
+    }
   }
 });
 
