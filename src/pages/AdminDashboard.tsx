@@ -91,6 +91,7 @@ const AdminDashboard: React.FC = () => {
   ]);
 
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
+  const [deletingEvent, setDeletingEvent] = useState<string | null>(null);
   const [newEvent, setNewEvent] = useState({
     title: '',
     date: '',
@@ -191,9 +192,28 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const deleteEvent = (eventId: string) => {
-    if (window.confirm('Are you sure you want to delete this event?')) {
-      setEvents(events.filter(event => event.id !== eventId));
+  const deleteEvent = async (eventId: string) => {
+    if (window.confirm('Are you sure you want to delete this event? This will remove it from both the database and Google Calendar.')) {
+      setDeletingEvent(eventId);
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setEvents(events.filter(event => event.id !== eventId));
+          alert(`Event deleted successfully!${data.mongoDeleted ? ' Removed from database.' : ''}${data.calendarDeleted ? ' Removed from Google Calendar.' : ''}`);
+        } else {
+          const errorData = await response.json();
+          alert(`Failed to delete event: ${errorData.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error deleting event:', error);
+        alert('Failed to delete event. Please try again.');
+      } finally {
+        setDeletingEvent(null);
+      }
     }
   };
 
@@ -740,10 +760,19 @@ const AdminDashboard: React.FC = () => {
                     </button>
                     <button
                       onClick={() => deleteEvent(event.id)}
-                      className="p-2 text-gray-600 hover:text-red-600 transition-colors"
-                      title="Delete Event"
+                      disabled={deletingEvent === event.id}
+                      className={`p-2 transition-colors ${
+                        deletingEvent === event.id 
+                          ? 'text-gray-400 cursor-not-allowed' 
+                          : 'text-gray-600 hover:text-red-600'
+                      }`}
+                      title={deletingEvent === event.id ? 'Deleting...' : 'Delete Event'}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {deletingEvent === event.id ? (
+                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -821,12 +850,26 @@ const AdminDashboard: React.FC = () => {
         <div className="card mt-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Past Events</h2>
-            <button
-              onClick={() => setShowPastEvents(!showPastEvents)}
-              className="text-pizza-red hover:text-red-700 transition-colors"
-            >
-              {showPastEvents ? 'Hide Past Events' : `Show Past Events (${pastEvents.length})`}
-            </button>
+            <div className="flex items-center space-x-4">
+              {pastEvents.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to clear all past events? This will remove the sample data.')) {
+                      setPastEvents([]);
+                    }
+                  }}
+                  className="text-red-600 hover:text-red-700 transition-colors text-sm"
+                >
+                  Clear Past Events
+                </button>
+              )}
+              <button
+                onClick={() => setShowPastEvents(!showPastEvents)}
+                className="text-pizza-red hover:text-red-700 transition-colors"
+              >
+                {showPastEvents ? 'Hide Past Events' : `Show Past Events (${pastEvents.length})`}
+              </button>
+            </div>
           </div>
           
           {showPastEvents && (

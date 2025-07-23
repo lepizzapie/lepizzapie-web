@@ -530,6 +530,79 @@ router.post('/sync-all', async (req, res) => {
   }
 });
 
+// DELETE /api/events/:id
+router.delete('/:id', async (req, res) => {
+  let client;
+  try {
+    const eventId = req.params.id;
+    console.log('🗑️ Deleting event:', eventId);
+    
+    // Try to delete from MongoDB
+    let mongoDeleted = false;
+    try {
+      console.log('🔗 Attempting MongoDB connection for delete...');
+      client = new MongoClient(uri, mongoOptions);
+      
+      const connectPromise = client.connect();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout')), 10000)
+      );
+      
+      await Promise.race([connectPromise, timeoutPromise]);
+      console.log('✅ MongoDB connected successfully for delete');
+      
+      const db = client.db(dbName);
+      await db.admin().ping();
+      console.log('🏓 MongoDB ping successful for delete');
+      
+      const result = await db.collection(collectionName).deleteOne({ _id: eventId });
+      mongoDeleted = result.deletedCount > 0;
+      console.log('✅ Event deleted from MongoDB:', mongoDeleted);
+      
+    } catch (mongoError) {
+      console.error('❌ MongoDB delete failed:', mongoError.message);
+    }
+    
+    // Try to delete from Google Calendar
+    let calendarDeleted = false;
+    try {
+      const calendarService = require('../googleCalendarService');
+      await calendarService.deleteEvent(eventId);
+      calendarDeleted = true;
+      console.log('✅ Event deleted from Google Calendar');
+    } catch (calendarError) {
+      console.warn('⚠️ Failed to delete from Google Calendar:', calendarError.message);
+    }
+    
+    if (mongoDeleted || calendarDeleted) {
+      res.json({ 
+        success: true, 
+        message: 'Event deleted successfully',
+        mongoDeleted,
+        calendarDeleted
+      });
+    } else {
+      res.status(404).json({ 
+        success: false, 
+        error: 'Event not found or could not be deleted' 
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error deleting event:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  } finally {
+    if (client) {
+      try {
+        await client.close();
+        console.log('🔌 MongoDB connection closed for delete');
+      } catch (closeError) {
+        console.warn('⚠️ Error closing MongoDB connection:', closeError.message);
+      }
+    }
+  }
+});
+
 // Helper to get next day in 'YYYY-MM-DD' format
 function getNextDay(dateStr) {
   const date = new Date(dateStr);
