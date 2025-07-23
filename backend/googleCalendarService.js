@@ -1,5 +1,5 @@
 // Google Calendar Service Account Integration (Node.js backend)
-// Last updated: 2025-07-22 18:30 UTC - Force redeploy
+// Last updated: 2025-07-22 19:00 UTC - Complete rewrite to force deployment
 // Using direct HTTP requests to bypass googleapis library issues
 const https = require('https');
 const crypto = require('crypto');
@@ -9,36 +9,40 @@ let calendarId = process.env.GOOGLE_CALENDAR_ID;
 let accessToken = null;
 let serviceAccountKey = null;
 
+console.log('🔄 Loading Google Calendar service...');
+
 function initializeCalendarService() {
+  console.log('🚀 Starting Google Calendar service initialization...');
+  
   try {
     const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
     const calendarIdEnv = process.env.GOOGLE_CALENDAR_ID;
     
     if (!key) {
-      console.error('GOOGLE_SERVICE_ACCOUNT_KEY env var not set');
+      console.error('❌ GOOGLE_SERVICE_ACCOUNT_KEY env var not set');
       isInitialized = false;
       return false;
     }
     
     if (!calendarIdEnv) {
-      console.error('GOOGLE_CALENDAR_ID env var not set');
+      console.error('❌ GOOGLE_CALENDAR_ID env var not set');
       isInitialized = false;
       return false;
     }
     
-    console.log('Initializing Google Calendar service with direct HTTP...');
-    console.log('Calendar ID:', calendarIdEnv);
+    console.log('📅 Calendar ID:', calendarIdEnv);
+    console.log('🔑 Key length:', key.length);
     
     // Parse the service account key
     let keyObj;
     try {
       keyObj = typeof key === 'string' ? JSON.parse(key) : key;
       console.log('✅ Service account key parsed successfully');
-      console.log('Service account email:', keyObj.client_email);
+      console.log('📧 Service account email:', keyObj.client_email);
       serviceAccountKey = keyObj;
       calendarId = calendarIdEnv;
       isInitialized = true;
-      console.log('✅ Google Calendar service initialized successfully');
+      console.log('🎉 Google Calendar service initialized successfully!');
       return true;
     } catch (parseError) {
       console.error('❌ Failed to parse service account key:', parseError.message);
@@ -46,7 +50,7 @@ function initializeCalendarService() {
       return false;
     }
   } catch (err) {
-    console.error('Failed to initialize Google Calendar service:', err.message);
+    console.error('❌ Failed to initialize Google Calendar service:', err.message);
     console.error('Error details:', err);
     isInitialized = false;
     return false;
