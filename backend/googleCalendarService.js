@@ -2,6 +2,7 @@
 // Last updated: 2025-07-22 18:30 UTC - Force redeploy
 // Using direct HTTP requests to bypass googleapis library issues
 const https = require('https');
+const crypto = require('crypto');
 
 let isInitialized = false;
 let calendarId = process.env.GOOGLE_CALENDAR_ID;
@@ -55,6 +56,22 @@ function initializeCalendarService() {
 // Initialize on module load
 initializeCalendarService();
 
+// Simple JWT signing without external library
+function signJWT(payload, privateKey) {
+  const header = { alg: 'RS256', typ: 'JWT' };
+  
+  const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
+  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  
+  const data = `${encodedHeader}.${encodedPayload}`;
+  
+  const sign = crypto.createSign('RSA-SHA256');
+  sign.update(data);
+  const signature = sign.sign(privateKey, 'base64url');
+  
+  return `${data}.${signature}`;
+}
+
 // Helper function to get access token
 async function getAccessToken() {
   if (!serviceAccountKey) {
@@ -62,8 +79,6 @@ async function getAccessToken() {
   }
   
   return new Promise((resolve, reject) => {
-    const jwt = require('jsonwebtoken');
-    
     const now = Math.floor(Date.now() / 1000);
     const payload = {
       iss: serviceAccountKey.client_email,
@@ -73,46 +88,50 @@ async function getAccessToken() {
       iat: now
     };
     
-    const token = jwt.sign(payload, serviceAccountKey.private_key, { algorithm: 'RS256' });
-    
-    const postData = `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${encodeURIComponent(token)}`;
-    
-    const options = {
-      hostname: 'oauth2.googleapis.com',
-      port: 443,
-      path: '/token',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': Buffer.byteLength(postData)
-      }
-    };
-    
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      res.on('end', () => {
-        try {
-          const response = JSON.parse(data);
-          if (response.access_token) {
-            resolve(response.access_token);
-          } else {
-            reject(new Error('No access token in response'));
-          }
-        } catch (e) {
-          reject(new Error('Failed to parse token response'));
+    try {
+      const token = signJWT(payload, serviceAccountKey.private_key);
+      
+      const postData = `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${encodeURIComponent(token)}`;
+      
+      const options = {
+        hostname: 'oauth2.googleapis.com',
+        port: 443,
+        path: '/token',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': Buffer.byteLength(postData)
         }
+      };
+      
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+        res.on('end', () => {
+          try {
+            const response = JSON.parse(data);
+            if (response.access_token) {
+              resolve(response.access_token);
+            } else {
+              reject(new Error('No access token in response'));
+            }
+          } catch (e) {
+            reject(new Error('Failed to parse token response'));
+          }
+        });
       });
-    });
-    
-    req.on('error', (err) => {
-      reject(err);
-    });
-    
-    req.write(postData);
-    req.end();
+      
+      req.on('error', (err) => {
+        reject(err);
+      });
+      
+      req.write(postData);
+      req.end();
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 
