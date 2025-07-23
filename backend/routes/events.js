@@ -98,8 +98,40 @@ router.get('/', async (req, res) => {
     const events = await db.collection(collectionName).find({}).toArray();
     res.json(events);
   } catch (err) {
-    console.error('Error fetching events:', err);
-    res.status(500).json({ error: 'Failed to fetch events' });
+    console.error('Error fetching events from MongoDB:', err);
+    console.log('⚠️  Falling back to Google Calendar events due to MongoDB error');
+    
+    // Fallback: try to get events from Google Calendar
+    try {
+      const calendarService = require('../googleCalendarService');
+      const now = new Date();
+      const sixMonthsLater = new Date();
+      sixMonthsLater.setMonth(now.getMonth() + 6);
+      
+      const calendarEvents = await calendarService.listEvents(now.toISOString(), sixMonthsLater.toISOString());
+      
+      // Convert Google Calendar events to our format
+      const events = calendarEvents.map(event => ({
+        _id: event.id,
+        title: event.summary || 'Pizza Event',
+        date: event.start.dateTime ? event.start.dateTime.split('T')[0] : event.start.date,
+        time: event.start.dateTime ? event.start.dateTime.split('T')[1].substring(0, 5) : '18:00',
+        eventType: 'Pizza Event',
+        guestCount: 10,
+        eventLocation: event.location || 'Mobile Pizza Service',
+        contactName: 'Customer',
+        contactEmail: event.attendees ? event.attendees[0]?.email : 'No email',
+        specialRequests: event.description || 'No special requests',
+        status: 'confirmed',
+        createdAt: event.created || new Date().toISOString(),
+        fromGoogleCalendar: true
+      }));
+      
+      res.json(events);
+    } catch (calendarError) {
+      console.error('Failed to fetch events from Google Calendar:', calendarError);
+      res.status(500).json({ error: 'Failed to fetch events from both MongoDB and Google Calendar' });
+    }
   } finally {
     if (client) await client.close();
   }
