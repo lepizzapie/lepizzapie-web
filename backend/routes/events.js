@@ -111,10 +111,7 @@ router.post('/', async (req, res) => {
   try {
     const eventData = req.body;
     console.log('Received event data:', eventData);
-    // Save to MongoDB
-    client = new MongoClient(uri, mongoOptions);
-    await client.connect();
-    const db = client.db(dbName);
+    
     const eventDoc = {
       title: eventData.title || `Pizza Event - ${eventData.name || 'Event'}`,
       date: eventData.date,
@@ -131,7 +128,19 @@ router.post('/', async (req, res) => {
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
-    const insertResult = await db.collection(collectionName).insertOne(eventDoc);
+    
+    // Try to save to MongoDB (with fallback)
+    let mongoResult = null;
+    try {
+      client = new MongoClient(uri, mongoOptions);
+      await client.connect();
+      const db = client.db(dbName);
+      mongoResult = await db.collection(collectionName).insertOne(eventDoc);
+      console.log('Event saved to MongoDB:', mongoResult.insertedId);
+    } catch (mongoError) {
+      console.warn('MongoDB save failed, continuing with Google Calendar sync:', mongoError.message);
+    }
+    
     // Try to create Google Calendar event
     let calendarEvent = null;
     try {
@@ -158,10 +167,12 @@ router.post('/', async (req, res) => {
       console.warn('Failed to create Google Calendar event:', calendarError.message);
       // Continue without calendar sync
     }
+    
     res.json({
       message: 'Event received successfully!',
-      event: { ...eventDoc, _id: insertResult.insertedId },
-      calendarEvent: calendarEvent ? { id: calendarEvent.id, synced: true } : { synced: false }
+      event: { ...eventDoc, _id: mongoResult ? mongoResult.insertedId : 'google-calendar-only' },
+      calendarEvent: calendarEvent ? { id: calendarEvent.id, synced: true } : { synced: false },
+      mongoSaved: !!mongoResult
     });
   } catch (err) {
     console.error('Error creating event:', err);
