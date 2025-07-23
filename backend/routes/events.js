@@ -435,103 +435,122 @@ router.delete('/unavailable', async (req, res) => {
 
 // POST /api/events/confirm - Confirm an event and sync to Google Calendar
 router.post('/confirm', async (req, res) => {
-  let client;
   try {
     const { eventId } = req.body;
     if (!eventId) return res.status(400).json({ error: 'Event ID is required' });
     
-    // Update event status in database
-    client = new MongoClient(uri);
-    await client.connect();
-    const db = client.db(dbName);
+    console.log('✅ Confirming event:', eventId);
     
-    const event = await db.collection(collectionName).findOne({ _id: new ObjectId(eventId) });
-    if (!event) return res.status(404).json({ error: 'Event not found' });
+    // Try to get event from Google Calendar first (since MongoDB is having issues)
+    let event = null;
+    try {
+      const calendarService = require('../googleCalendarService');
+      const now = new Date();
+      const sixMonthsLater = new Date();
+      sixMonthsLater.setMonth(now.getMonth() + 6);
+      const events = await calendarService.listEvents(now.toISOString(), sixMonthsLater.toISOString());
+      
+      // Find the event by ID
+      event = events.find(e => e.id === eventId);
+      
+      if (!event) {
+        console.log('❌ Event not found in Google Calendar:', eventId);
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      
+      console.log('✅ Found event in Google Calendar:', event.summary);
+      
+    } catch (calendarError) {
+      console.error('❌ Error finding event in Google Calendar:', calendarError.message);
+      return res.status(500).json({ error: 'Failed to find event' });
+    }
     
-    // Update status to confirmed
-    await db.collection(collectionName).updateOne(
-      { _id: new ObjectId(eventId) },
-      { $set: { status: 'confirmed' } }
-    );
+    // Try to update in MongoDB if possible
+    let mongoUpdated = false;
+    try {
+      const client = new MongoClient(uri, mongoOptions);
+      await client.connect();
+      const db = client.db(dbName);
+      
+      await db.collection(collectionName).updateOne(
+        { _id: eventId },
+        { $set: { status: 'confirmed' } }
+      );
+      mongoUpdated = true;
+      console.log('✅ Event status updated in MongoDB');
+      
+      await client.close();
+    } catch (mongoError) {
+      console.warn('⚠️ MongoDB update failed, continuing with Google Calendar only:', mongoError.message);
+    }
     
-    // Sync to Google Calendar
+    // Create a new confirmed event in Google Calendar
     let calendarEvent = null;
     try {
       const calendarService = require('../googleCalendarService');
       const googleEvent = {
-        summary: event.title,
-        description: `Contact: ${event.contactEmail || 'No email provided'}\nGuests: ${event.guestCount || 'Not specified'}\nSpecial Requests: ${event.specialRequests || 'None'}`,
-        start: {
-          dateTime: new Date(`${event.date}T${event.time || '18:00'}:00`).toISOString(),
-          timeZone: 'America/Los_Angeles',
-        },
-        end: {
-          dateTime: new Date(new Date(`${event.date}T${event.time || '18:00'}:00`).getTime() + 3 * 60 * 60 * 1000).toISOString(),
-          timeZone: 'America/Los_Angeles',
-        },
-        location: event.eventLocation || 'Mobile Pizza Service',
-        attendees: [
-          { email: event.contactEmail, displayName: event.contactName }
-        ],
+        summary: `CONFIRMED: ${event.summary}`,
+        description: `Contact: ${event.description || 'No email provided'}\nStatus: CONFIRMED\nOriginal Event ID: ${eventId}`,
+        start: event.start,
+        end: event.end,
+        location: event.location || 'Mobile Pizza Service',
       };
       calendarEvent = await calendarService.createEvent(googleEvent);
-      console.log('Event confirmed and synced to Google Calendar:', calendarEvent.id);
+      console.log('✅ Confirmed event created in Google Calendar:', calendarEvent.id);
     } catch (calendarError) {
-      console.warn('Failed to sync confirmed event to Google Calendar:', calendarError.message);
+      console.warn('⚠️ Failed to create confirmed event in Google Calendar:', calendarError.message);
     }
     
     res.json({
       success: true,
       message: 'Event confirmed',
+      mongoUpdated,
       calendarEvent: calendarEvent ? { id: calendarEvent.id, synced: true } : { synced: false }
     });
   } catch (err) {
-    console.error('Error confirming event:', err);
+    console.error('❌ Error confirming event:', err);
     res.status(500).json({ error: 'Server error', details: err.message });
-  } finally {
-    if (client) await client.close();
   }
 });
 
 // POST /api/events/sync-all - Sync all confirmed events to Google Calendar
 router.post('/sync-all', async (req, res) => {
-  let client;
   try {
-    client = new MongoClient(uri, mongoOptions);
-    await client.connect();
-    const db = client.db(dbName);
+    console.log('🔄 Starting sync-all operation...');
     
-    // Get all confirmed events
-    const confirmedEvents = await db.collection(collectionName)
-      .find({ status: 'confirmed' })
-      .toArray();
-    
+    // Get all events from Google Calendar
     const calendarService = require('../googleCalendarService');
+    const now = new Date();
+    const sixMonthsLater = new Date();
+    sixMonthsLater.setMonth(now.getMonth() + 6);
+    const events = await calendarService.listEvents(now.toISOString(), sixMonthsLater.toISOString());
+    
+    // Filter for events that need confirmation (not already confirmed)
+    const pendingEvents = events.filter(event => 
+      event.summary && 
+      !event.summary.toLowerCase().includes('confirmed') &&
+      !event.summary.toLowerCase().includes('unavailable')
+    );
+    
+    console.log(`📅 Found ${pendingEvents.length} pending events to sync`);
+    
     let success = 0;
     let failed = 0;
     
-    for (const event of confirmedEvents) {
+    for (const event of pendingEvents) {
       try {
         const googleEvent = {
-          summary: event.title,
-          description: `Contact: ${event.contactEmail || 'No email provided'}\nGuests: ${event.guestCount || 'Not specified'}\nSpecial Requests: ${event.specialRequests || 'None'}`,
-          start: {
-            dateTime: new Date(`${event.date}T${event.time || '18:00'}:00`).toISOString(),
-            timeZone: 'America/Los_Angeles',
-          },
-          end: {
-            dateTime: new Date(new Date(`${event.date}T${event.time || '18:00'}:00`).getTime() + 3 * 60 * 60 * 1000).toISOString(),
-            timeZone: 'America/Los_Angeles',
-          },
-          location: event.eventLocation || 'Mobile Pizza Service',
-          attendees: [
-            { email: event.contactEmail, displayName: event.contactName }
-          ],
+          summary: `CONFIRMED: ${event.summary}`,
+          description: `Contact: ${event.description || 'No email provided'}\nStatus: CONFIRMED\nOriginal Event ID: ${event.id}`,
+          start: event.start,
+          end: event.end,
+          location: event.location || 'Mobile Pizza Service',
         };
         await calendarService.createEvent(googleEvent);
         success++;
+        console.log(`✅ Synced event: ${event.summary}`);
       } catch (error) {
-        console.error(`Failed to sync event ${event._id}:`, error);
+        console.error(`❌ Failed to sync event ${event.id}:`, error);
         failed++;
       }
     }
@@ -543,10 +562,8 @@ router.post('/sync-all', async (req, res) => {
       failed: failed
     });
   } catch (err) {
-    console.error('Error syncing events:', err);
+    console.error('❌ Error syncing events:', err);
     res.status(500).json({ error: 'Server error', details: err.message });
-  } finally {
-    if (client) await client.close();
   }
 });
 
