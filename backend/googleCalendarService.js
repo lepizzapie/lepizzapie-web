@@ -1,5 +1,5 @@
 // Google Calendar Service Account Integration (Node.js backend)
-// Last updated: 2025-07-22 19:00 UTC - Complete rewrite to force deployment
+// Last updated: 2025-07-22 19:15 UTC - Testing deployment with mock first
 // Using direct HTTP requests to bypass googleapis library issues
 const https = require('https');
 const crypto = require('crypto');
@@ -60,183 +60,25 @@ function initializeCalendarService() {
 // Initialize on module load
 initializeCalendarService();
 
-// Simple JWT signing without external library
-function signJWT(payload, privateKey) {
-  const header = { alg: 'RS256', typ: 'JWT' };
-  
-  const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
-  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  
-  const data = `${encodedHeader}.${encodedPayload}`;
-  
-  const sign = crypto.createSign('RSA-SHA256');
-  sign.update(data);
-  const signature = sign.sign(privateKey, 'base64url');
-  
-  return `${data}.${signature}`;
-}
-
-// Helper function to get access token
-async function getAccessToken() {
-  if (!serviceAccountKey) {
-    throw new Error('Service account key not available');
-  }
-  
-  return new Promise((resolve, reject) => {
-    const now = Math.floor(Date.now() / 1000);
-    const payload = {
-      iss: serviceAccountKey.client_email,
-      scope: 'https://www.googleapis.com/auth/calendar',
-      aud: 'https://oauth2.googleapis.com/token',
-      exp: now + 3600,
-      iat: now
-    };
-    
-    try {
-      const token = signJWT(payload, serviceAccountKey.private_key);
-      
-      const postData = `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${encodeURIComponent(token)}`;
-      
-      const options = {
-        hostname: 'oauth2.googleapis.com',
-        port: 443,
-        path: '/token',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': Buffer.byteLength(postData)
-        }
-      };
-      
-      const req = https.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-        res.on('end', () => {
-          try {
-            const response = JSON.parse(data);
-            if (response.access_token) {
-              resolve(response.access_token);
-            } else {
-              reject(new Error('No access token in response'));
-            }
-          } catch (e) {
-            reject(new Error('Failed to parse token response'));
-          }
-        });
-      });
-      
-      req.on('error', (err) => {
-        reject(err);
-      });
-      
-      req.write(postData);
-      req.end();
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-
-// Helper function to make API requests
-async function makeCalendarRequest(endpoint, method = 'GET', data = null) {
-  const token = await getAccessToken();
-  
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'www.googleapis.com',
-      port: 443,
-      path: `/calendar/v3${endpoint}`,
-      method: method,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    };
-    
-    if (data) {
-      options.headers['Content-Length'] = Buffer.byteLength(JSON.stringify(data));
-    }
-    
-    const req = https.request(options, (res) => {
-      let responseData = '';
-      res.on('data', (chunk) => {
-        responseData += chunk;
-      });
-      res.on('end', () => {
-        try {
-          const response = JSON.parse(responseData);
-          resolve(response);
-        } catch (e) {
-          reject(new Error('Failed to parse API response'));
-        }
-      });
-    });
-    
-    req.on('error', (err) => {
-      reject(err);
-    });
-    
-    if (data) {
-      req.write(JSON.stringify(data));
-    }
-    req.end();
-  });
-}
-
+// TEMPORARY: Mock implementation to test deployment
 async function createEvent(event) {
-  if (!isInitialized) initializeCalendarService();
-  if (!isInitialized) throw new Error('Google Calendar not initialized');
-  try {
-    const response = await makeCalendarRequest(`/calendars/${encodeURIComponent(calendarId)}/events`, 'POST', event);
-    return response;
-  } catch (err) {
-    console.error('Error creating Google Calendar event:', err);
-    throw err;
-  }
+  console.log('🎯 Mock createEvent called');
+  return { id: 'mock-event-id', summary: event.summary };
 }
 
 async function updateEvent(eventId, event) {
-  if (!isInitialized) initializeCalendarService();
-  if (!isInitialized) throw new Error('Google Calendar not initialized');
-  try {
-    const response = await makeCalendarRequest(`/calendars/${encodeURIComponent(calendarId)}/events/${eventId}`, 'PUT', event);
-    return response;
-  } catch (err) {
-    console.error('Error updating Google Calendar event:', err);
-    throw err;
-  }
+  console.log('🎯 Mock updateEvent called');
+  return { id: eventId, summary: event.summary };
 }
 
 async function deleteEvent(eventId) {
-  if (!isInitialized) initializeCalendarService();
-  if (!isInitialized) throw new Error('Google Calendar not initialized');
-  try {
-    await makeCalendarRequest(`/calendars/${encodeURIComponent(calendarId)}/events/${eventId}`, 'DELETE');
-    return true;
-  } catch (err) {
-    console.error('Error deleting Google Calendar event:', err);
-    throw err;
-  }
+  console.log('🎯 Mock deleteEvent called');
+  return true;
 }
 
 async function listEvents(timeMin, timeMax) {
-  if (!isInitialized) initializeCalendarService();
-  if (!isInitialized) throw new Error('Google Calendar not initialized');
-  try {
-    const params = new URLSearchParams({
-      timeMin: timeMin,
-      timeMax: timeMax,
-      singleEvents: 'true',
-      orderBy: 'startTime'
-    });
-    const response = await makeCalendarRequest(`/calendars/${encodeURIComponent(calendarId)}/events?${params}`);
-    return response.items || [];
-  } catch (err) {
-    console.error('Error listing Google Calendar events:', err);
-    throw err;
-  }
+  console.log('🎯 Mock listEvents called');
+  return [];
 }
 
 module.exports = {
