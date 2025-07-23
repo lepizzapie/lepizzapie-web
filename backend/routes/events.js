@@ -3,20 +3,29 @@ const router = express.Router();
 const { MongoClient, ObjectId } = require('mongodb');
 
 // MongoDB connection settings
-let uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db';
-
-// Add TLS parameters to MongoDB URI if it's an Atlas connection
-if (uri.includes('mongodb.net') && !uri.includes('tls=true')) {
-  uri += '?tls=true&tlsAllowInvalidCertificates=true&tlsAllowInvalidHostnames=true';
-}
-
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db';
 const dbName = 'lepizzapie-db';
 const collectionName = 'events';
 
-// MongoDB connection options - minimal for Atlas compatibility
+// MongoDB connection options - optimized for Atlas
 const mongoOptions = {
   retryWrites: true,
-  w: 'majority'
+  w: 'majority',
+  serverApi: {
+    version: '1',
+    strict: true,
+    deprecationErrors: true,
+  },
+  maxPoolSize: 10,
+  minPoolSize: 1,
+  maxIdleTimeMS: 30000,
+  connectTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  serverSelectionTimeoutMS: 30000,
+  heartbeatFrequencyMS: 10000,
+  retryReads: true,
+  ssl: true,
+  sslValidate: false
 };
 
 // GET /api/events/availability
@@ -279,7 +288,7 @@ router.post('/', async (req, res) => {
       // Add connection timeout and retry logic
       const connectPromise = client.connect();
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Connection timeout')), 10000)
+        setTimeout(() => reject(new Error('Connection timeout')), 30000)
       );
       
       await Promise.race([connectPromise, timeoutPromise]);

@@ -6,17 +6,29 @@ const { MongoClient, ObjectId } = require('mongodb');
 const router = express.Router();
 
 // MongoDB connection settings
-let uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db';
-
-// MongoDB URI is used as-is
-
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db';
 const dbName = 'lepizzapie-db';
 const collectionName = 'adminUsers';
 
-// MongoDB connection options - minimal for Atlas compatibility
+// MongoDB connection options - optimized for Atlas
 const mongoOptions = {
   retryWrites: true,
-  w: 'majority'
+  w: 'majority',
+  serverApi: {
+    version: '1',
+    strict: true,
+    deprecationErrors: true,
+  },
+  maxPoolSize: 10,
+  minPoolSize: 1,
+  maxIdleTimeMS: 30000,
+  connectTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  serverSelectionTimeoutMS: 30000,
+  heartbeatFrequencyMS: 10000,
+  retryReads: true,
+  ssl: true,
+  sslValidate: false
 };
 
 // JWT secret
