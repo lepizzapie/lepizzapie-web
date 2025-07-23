@@ -13,23 +13,10 @@ if (uri.includes('mongodb.net') && !uri.includes('tls=true')) {
 const dbName = 'lepizzapie-db';
 const collectionName = 'events';
 
-// MongoDB connection options - simplified for Atlas compatibility
+// MongoDB connection options - minimal for Atlas compatibility
 const mongoOptions = {
   retryWrites: true,
-  w: 'majority',
-  serverApi: {
-    version: '1',
-    strict: true,
-    deprecationErrors: true,
-  },
-  maxPoolSize: 5,
-  minPoolSize: 1,
-  maxIdleTimeMS: 30000,
-  connectTimeoutMS: 15000,
-  socketTimeoutMS: 45000,
-  serverSelectionTimeoutMS: 15000,
-  heartbeatFrequencyMS: 10000,
-  retryReads: true
+  w: 'majority'
 };
 
 // GET /api/events/availability

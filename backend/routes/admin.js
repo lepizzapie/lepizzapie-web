@@ -8,31 +8,15 @@ const router = express.Router();
 // MongoDB connection settings
 let uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/lepizzapie-db';
 
-// Add TLS parameters to MongoDB URI if it's an Atlas connection
-if (uri.includes('mongodb.net') && !uri.includes('tls=true')) {
-  uri += '?tls=true&tlsAllowInvalidCertificates=true&tlsAllowInvalidHostnames=true';
-}
+// MongoDB URI is used as-is
 
 const dbName = 'lepizzapie-db';
 const collectionName = 'adminUsers';
 
-// MongoDB connection options - simplified for Atlas compatibility
+// MongoDB connection options - minimal for Atlas compatibility
 const mongoOptions = {
   retryWrites: true,
-  w: 'majority',
-  serverApi: {
-    version: '1',
-    strict: true,
-    deprecationErrors: true,
-  },
-  maxPoolSize: 5,
-  minPoolSize: 1,
-  maxIdleTimeMS: 30000,
-  connectTimeoutMS: 15000,
-  socketTimeoutMS: 45000,
-  serverSelectionTimeoutMS: 15000,
-  heartbeatFrequencyMS: 10000,
-  retryReads: true
+  w: 'majority'
 };
 
 // JWT secret
