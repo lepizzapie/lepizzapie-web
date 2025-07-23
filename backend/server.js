@@ -3,6 +3,24 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+// Environment variable validation
+const requiredEnvVars = [
+  'MONGODB_URI',
+  'JWT_SECRET',
+  'GOOGLE_SERVICE_ACCOUNT_KEY',
+  'GOOGLE_CALENDAR_ID'
+];
+
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+  console.error('Please set all required environment variables before starting the server.');
+  process.exit(1);
+}
+
+console.log('✅ All required environment variables are set');
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 
@@ -83,8 +101,6 @@ app.get('/test-calendar-service', async (req, res) => {
     let isInitialized = false;
     let serviceError = null;
     try {
-      // Clear module cache to force fresh load
-      delete require.cache[require.resolve('./googleCalendarService')];
       calendarService = require('./googleCalendarService');
       isInitialized = calendarService.isInitialized();
     } catch (e) {
@@ -93,7 +109,7 @@ app.get('/test-calendar-service', async (req, res) => {
     
     res.json({
       isInitialized,
-      hasGoogleApis: false, // We're not using googleapis library anymore
+      hasGoogleApis: true, // We're using googleapis library
       hasServiceAccountKey: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
       hasCalendarId: !!process.env.GOOGLE_CALENDAR_ID,
       serviceAccountKeyLength: process.env.GOOGLE_SERVICE_ACCOUNT_KEY ? process.env.GOOGLE_SERVICE_ACCOUNT_KEY.length : 0,
@@ -101,16 +117,16 @@ app.get('/test-calendar-service', async (req, res) => {
       keyParseError,
       parsedKey: parsedKey ? { client_email: parsedKey.client_email, hasPrivateKey: !!parsedKey.private_key } : null,
       serviceError,
-      note: 'Using direct HTTP requests to Google Calendar API'
+      note: 'Using googleapis library for Google Calendar API'
     });
   } catch (error) {
     res.json({
       error: error.message,
       isInitialized: false,
-      hasGoogleApis: false,
+      hasGoogleApis: true,
       hasServiceAccountKey: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
       hasCalendarId: !!process.env.GOOGLE_CALENDAR_ID,
-      note: 'Using direct HTTP requests to Google Calendar API'
+      note: 'Using googleapis library for Google Calendar API'
     });
   }
 });

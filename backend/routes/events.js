@@ -10,8 +10,6 @@ const collectionName = 'events';
 // GET /api/events/availability
 router.get('/availability', async (req, res) => {
   try {
-    // Clear module cache to force fresh load
-    delete require.cache[require.resolve('../googleCalendarService')];
     const calendarService = require('../googleCalendarService');
     const now = new Date();
     const sixMonthsLater = new Date();
@@ -54,7 +52,22 @@ router.get('/availability', async (req, res) => {
     res.json(availableDates);
   } catch (error) {
     console.error('Failed to fetch availability from Google Calendar:', error);
-    res.status(500).json({ error: 'Failed to fetch availability' });
+    // Fallback: return all dates as available if Google Calendar fails
+    console.log('⚠️  Falling back to all dates available due to Google Calendar error');
+    const now = new Date();
+    const sixMonthsLater = new Date();
+    sixMonthsLater.setMonth(now.getMonth() + 6);
+    const availableDates = [];
+    let currentDate = new Date(now);
+    while (currentDate <= sixMonthsLater) {
+      const dateString = currentDate.toISOString().split('T')[0];
+      availableDates.push({
+        date: dateString,
+        available: true
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    res.json(availableDates);
   }
 });
 
@@ -105,8 +118,6 @@ router.post('/', async (req, res) => {
     // Try to create Google Calendar event
     let calendarEvent = null;
     try {
-      // Clear module cache to force fresh load
-      delete require.cache[require.resolve('../googleCalendarService')];
       const calendarService = require('../googleCalendarService');
       const googleEvent = {
         summary: eventDoc.title,
@@ -148,8 +159,6 @@ router.post('/unavailable', async (req, res) => {
   try {
     const { date } = req.body; // date in 'YYYY-MM-DD' format
     if (!date) return res.status(400).json({ error: 'Date is required' });
-    // Clear module cache to force fresh load
-    delete require.cache[require.resolve('../googleCalendarService')];
     const calendarService = require('../googleCalendarService');
     // Create an all-day event titled 'UNAVAILABLE'
     const event = {
@@ -170,8 +179,6 @@ router.delete('/unavailable', async (req, res) => {
   try {
     const { date } = req.body; // date in 'YYYY-MM-DD' format
     if (!date) return res.status(400).json({ error: 'Date is required' });
-    // Clear module cache to force fresh load
-    delete require.cache[require.resolve('../googleCalendarService')];
     const calendarService = require('../googleCalendarService');
     // Find 'UNAVAILABLE' event for this date (case-insensitive)
     const events = await calendarService.listEvents(date, getNextDay(date));
@@ -213,8 +220,6 @@ router.post('/confirm', async (req, res) => {
     // Sync to Google Calendar
     let calendarEvent = null;
     try {
-      // Clear module cache to force fresh load
-      delete require.cache[require.resolve('../googleCalendarService')];
       const calendarService = require('../googleCalendarService');
       const googleEvent = {
         summary: event.title,
@@ -264,8 +269,6 @@ router.post('/sync-all', async (req, res) => {
       .find({ status: 'confirmed' })
       .toArray();
     
-    // Clear module cache to force fresh load
-    delete require.cache[require.resolve('../googleCalendarService')];
     const calendarService = require('../googleCalendarService');
     let success = 0;
     let failed = 0;

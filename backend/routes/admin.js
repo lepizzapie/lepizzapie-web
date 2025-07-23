@@ -11,7 +11,11 @@ const dbName = 'lepizzapie-db';
 const collectionName = 'adminUsers';
 
 // JWT secret
-const JWT_SECRET = process.env.JWT_SECRET || 'lepizzapie-admin-secret-key-2025';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('❌ JWT_SECRET environment variable is required');
+  process.exit(1);
+}
 
 // Helper: get admin user
 async function getAdminUser() {
