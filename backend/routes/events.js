@@ -407,12 +407,16 @@ router.delete('/unavailable', async (req, res) => {
     const unavailableEvent = events.find(e => {
       const isUnavailable = e.summary && typeof e.summary === 'string' &&
         e.summary.trim().toLowerCase() === 'unavailable';
-      const isCorrectDate = e.start && e.start.date === date;
+      
+      // Check both date formats (all-day events vs time-based events)
+      const isCorrectDate = (e.start && e.start.date === date) || 
+                           (e.start && e.start.dateTime && e.start.dateTime.startsWith(date));
       
       console.log('🔍 Checking event:', {
         id: e.id,
         summary: e.summary,
         startDate: e.start?.date,
+        startDateTime: e.start?.dateTime,
         isUnavailable,
         isCorrectDate
       });
