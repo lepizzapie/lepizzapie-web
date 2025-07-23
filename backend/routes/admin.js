@@ -12,8 +12,6 @@ const collectionName = 'adminUsers';
 
 // MongoDB connection options to handle SSL/TLS issues
 const mongoOptions = {
-  ssl: true,
-  sslValidate: false,
   tls: true,
   tlsAllowInvalidCertificates: true,
   tlsAllowInvalidHostnames: true,
