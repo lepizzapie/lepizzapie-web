@@ -1,5 +1,6 @@
 // Google Calendar Service Account Integration (Node.js backend)
-// Last updated: 2025-07-22 19:30 UTC - Clean mock implementation
+// Last updated: 2025-07-22 19:45 UTC - Force restart to clear cache
+// Using mock implementation to test deployment
 const https = require('https');
 const crypto = require('crypto');
 
