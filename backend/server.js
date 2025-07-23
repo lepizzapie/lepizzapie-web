@@ -80,6 +80,21 @@ app.get('/test-calendar-env', (req, res) => {
   });
 });
 
+// Test MongoDB connection string
+app.get('/test-mongodb-env', (req, res) => {
+  const hasMongoUri = !!process.env.MONGODB_URI;
+  const mongoUriLength = process.env.MONGODB_URI ? process.env.MONGODB_URI.length : 0;
+  const mongoUriPreview = process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 50) + '...' : 'not set';
+  
+  res.json({
+    hasMongoUri,
+    mongoUriLength,
+    mongoUriPreview,
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0
+  });
+});
+
 // Test Google Calendar service status
 app.get('/test-calendar-service', async (req, res) => {
   try {
