@@ -1,17 +1,14 @@
-// Google Calendar Service Account Integration (Node.js backend)
-// Last updated: 2025-07-22 19:45 UTC - Force restart to clear cache
-// Using mock implementation to test deployment
-const https = require('https');
-const crypto = require('crypto');
+// Google Calendar Service - FORCE DEPLOYMENT VERSION
+// Last updated: 2025-07-23 01:00 UTC - Complete rewrite to force deployment
+// This is a clean mock implementation to test deployment
+
+console.log('🔄 Loading Google Calendar service - FORCE DEPLOYMENT VERSION...');
 
 let isInitialized = false;
 let calendarId = process.env.GOOGLE_CALENDAR_ID;
-let serviceAccountKey = null;
-
-console.log('🔄 Loading Google Calendar service...');
 
 function initializeCalendarService() {
-  console.log('🚀 Starting Google Calendar service initialization...');
+  console.log('🚀 Starting Google Calendar service initialization - FORCE DEPLOYMENT VERSION...');
   
   try {
     const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
@@ -38,10 +35,9 @@ function initializeCalendarService() {
       keyObj = typeof key === 'string' ? JSON.parse(key) : key;
       console.log('✅ Service account key parsed successfully');
       console.log('📧 Service account email:', keyObj.client_email);
-      serviceAccountKey = keyObj;
       calendarId = calendarIdEnv;
       isInitialized = true;
-      console.log('🎉 Google Calendar service initialized successfully!');
+      console.log('🎉 Google Calendar service initialized successfully - FORCE DEPLOYMENT VERSION!');
       return true;
     } catch (parseError) {
       console.error('❌ Failed to parse service account key:', parseError.message);
@@ -59,24 +55,24 @@ function initializeCalendarService() {
 // Initialize on module load
 initializeCalendarService();
 
-// Mock implementation for testing
+// Clean mock implementation for testing deployment
 async function createEvent(event) {
-  console.log('🎯 Mock createEvent called with:', event.summary);
-  return { id: 'mock-event-id', summary: event.summary };
+  console.log('🎯 FORCE DEPLOYMENT VERSION - Mock createEvent called with:', event.summary);
+  return { id: 'mock-event-id-' + Date.now(), summary: event.summary };
 }
 
 async function updateEvent(eventId, event) {
-  console.log('🎯 Mock updateEvent called for:', eventId);
+  console.log('🎯 FORCE DEPLOYMENT VERSION - Mock updateEvent called for:', eventId);
   return { id: eventId, summary: event.summary };
 }
 
 async function deleteEvent(eventId) {
-  console.log('🎯 Mock deleteEvent called for:', eventId);
+  console.log('🎯 FORCE DEPLOYMENT VERSION - Mock deleteEvent called for:', eventId);
   return true;
 }
 
 async function listEvents(timeMin, timeMax) {
-  console.log('🎯 Mock listEvents called from', timeMin, 'to', timeMax);
+  console.log('🎯 FORCE DEPLOYMENT VERSION - Mock listEvents called from', timeMin, 'to', timeMax);
   return [];
 }
 
